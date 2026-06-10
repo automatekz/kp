@@ -203,6 +203,22 @@
   </div>
 
   <div class="card">
+    <h2>Быстрый шаблон <span class="tag">подставит лицензии и работы автоматически</span></h2>
+    <div class="grid g3">
+      <label class="f">Шаблон
+        <select id="tpl-pick"></select>
+      </label>
+      <label class="f">Кол-во пользователей
+        <input id="tpl-users" type="number" value="3" min="1" max="100">
+      </label>
+      <label class="f" style="justify-content:flex-end">
+        <button class="btn" onclick="applyTemplate()">Применить шаблон</button>
+      </label>
+    </div>
+    <p class="hint">Число пользователей задаёт количество лицензий amoCRM и телефонии Sipuni. После применения любую строку можно поправить вручную ниже.</p>
+  </div>
+
+  <div class="card">
     <h2>Лицензии <span class="tag">периодическая оплата согласно тарифам</span></h2>
     <table class="items">
       <thead><tr>
@@ -383,8 +399,88 @@ const CATALOG = {
   ]
 };
 
-/* ════════ Состояние ════════ */
-const state = { lic: [], work: [] };
+/* ════════ ШАБЛОНЫ (qty: 'users' = по числу пользователей, число = фиксировано) ════════ */
+const TEMPLATES = [
+  {
+    name:'amoCRM — старт (без телефонии)', platform:'amoCRM',
+    lic:[
+      {ref:'amoCRM, Базовый', qty:'users', months:6},
+      {ref:'Wazzup PRO', qty:1, months:6, discount:10},
+    ],
+    work:['Настройка и интеграция amoCRM — базовая','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'amoCRM + телефония (6 мес)', platform:'amoCRM',
+    lic:[
+      {ref:'amoCRM, Расширенный', qty:'users', months:6},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:6},
+      {ref:'Wazzup MAX', qty:1, months:6, discount:10},
+    ],
+    work:['Настройка и интеграция amoCRM — базовая + телефония','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'amoCRM + телефония — год', platform:'amoCRM',
+    lic:[
+      {ref:'amoCRM, Расширенный', qty:'users', months:12},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:12},
+      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+    ],
+    work:['Настройка и интеграция amoCRM — базовая + телефония','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'Битрикс24 + телефония — год', platform:'Битрикс24',
+    lic:[
+      {auto:'bitrix24', period:'year', qty:1},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:12},
+      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+    ],
+    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'Битрикс24 — старт (без телефонии)', platform:'Битрикс24',
+    lic:[
+      {auto:'bitrix24', period:'year', qty:1},
+      {ref:'Wazzup PRO', qty:1, months:12, discount:20},
+    ],
+    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
+  },
+];
+
+function catLic(name){
+  return CATALOG.licenses.find(x=>x.name===name) || {name, desc:'', price:0, unit:'мес', months:1, discount:0};
+}
+/* Авто-выбор тарифа Битрикс24 по числу пользователей (цена за всю компанию) */
+function pickBitrix24(users, period){
+  const y = period==='year';
+  if(users<=5)   return y?'Битрикс24, Базовый — год (-30%)':'Битрикс24, Базовый';
+  if(users<=50)  return y?'Битрикс24, Стандартный — год (-30%)':'Битрикс24, Стандартный';
+  if(users<=100) return y?'Битрикс24, Профессиональный — год (-30%)':'Битрикс24, Профессиональный';
+  return 'Битрикс24, Энтерпрайз 250';
+}
+function applyTemplate(){
+  const tpl = TEMPLATES[+$('tpl-pick').value];
+  const users = Math.max(1, +$('tpl-users').value || 1);
+  state.lic = tpl.lic.map(s=>{
+    let ref = s.ref;
+    if(s.auto==='bitrix24') ref = pickBitrix24(users, s.period);
+    const c = catLic(ref);
+    return {name:c.name, desc:c.desc, price:c.price, unit:c.unit,
+            qty: s.qty==='users' ? users : (s.qty||1),
+            months: s.months ?? c.months ?? 1,
+            discount: s.discount ?? c.discount ?? 0};
+  });
+  state.work = tpl.work.map(wn=>{ const w=CATALOG.works.find(x=>x.name===wn); return w?{...w,qty:1}:null; }).filter(Boolean);
+  $('p-platform').value = tpl.platform;
+  $('p-staff').value = users + ' ' + (users===1?'сотрудник':(users<5?'сотрудника':'сотрудников'));
+  $('p-variant').value = tpl.name;
+  renderLic(); renderWork();
+  toast('Шаблон применён: '+users+' польз.');
+}
+function refreshTemplates(){
+  $('tpl-pick').innerHTML = TEMPLATES.map((t,i)=>`<option value="${i}">${esc(t.name)}</option>`).join('');
+}
+
+
 const fmt = n => (Math.round(n)||0).toLocaleString('ru-RU') + ' ₸';
 const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $ = id => document.getElementById(id);
@@ -551,7 +647,7 @@ function importConfig(e){
 
 /* ════════ Старт: типовой набор «Б24 Стандарт год + Wazzup MAX год + Sipuni» ════════ */
 $('p-date').value = new Date().toISOString().slice(0,10);
-refreshPicks(); renderPrice();
+refreshPicks(); renderPrice(); refreshTemplates();
 function fromCat(i, extra){ return {...CATALOG.licenses[i], ...extra}; }
 state.lic.push(
   fromCat(3,  {qty:1, months:12, discount:30}),   // Битрикс24 Стандартный — год (-30%)
