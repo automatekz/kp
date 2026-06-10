@@ -416,16 +416,69 @@ var CATALOG = {
 
 /* ════════ ШАБЛОНЫ (qty: 'users' = по числу пользователей, число = фиксировано) ════════ */
 var TEMPLATES = [
+  /* ——— Битрикс24 (год, -30%) ——— */
   {
-    name:'amoCRM — старт (без телефонии)', platform:'amoCRM',
+    name:'Битрикс24 Стандарт · без телефонии', platform:'Битрикс24',
+    lic:[
+      {ref:'Битрикс24, Стандартный — год (-30%)', qty:1, months:12, discount:30},
+      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+    ],
+    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'Битрикс24 Стандарт · с телефонией', platform:'Битрикс24',
+    lic:[
+      {ref:'Битрикс24, Стандартный — год (-30%)', qty:1, months:12, discount:30},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:12},
+      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+    ],
+    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'Битрикс24 Профессиональный · без телефонии', platform:'Битрикс24',
+    lic:[
+      {ref:'Битрикс24, Профессиональный — год (-30%)', qty:1, months:12, discount:30},
+      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+    ],
+    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'Битрикс24 Профессиональный · с телефонией', platform:'Битрикс24',
+    lic:[
+      {ref:'Битрикс24, Профессиональный — год (-30%)', qty:1, months:12, discount:30},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:12},
+      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+    ],
+    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
+  },
+  /* ——— amoCRM (6 мес) ——— */
+  {
+    name:'amoCRM Базовый · без телефонии', platform:'amoCRM',
     lic:[
       {ref:'amoCRM, Базовый', qty:'users', months:6},
-      {ref:'Wazzup PRO', qty:1, months:6, discount:10},
+      {ref:'Wazzup MAX', qty:1, months:6, discount:10},
     ],
     work:['Настройка и интеграция amoCRM — базовая','Техническая поддержка, 1 месяц']
   },
   {
-    name:'amoCRM + телефония (6 мес)', platform:'amoCRM',
+    name:'amoCRM Базовый · с телефонией', platform:'amoCRM',
+    lic:[
+      {ref:'amoCRM, Базовый', qty:'users', months:6},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:6},
+      {ref:'Wazzup MAX', qty:1, months:6, discount:10},
+    ],
+    work:['Настройка и интеграция amoCRM — базовая + телефония','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'amoCRM Расширенный · без телефонии', platform:'amoCRM',
+    lic:[
+      {ref:'amoCRM, Расширенный', qty:'users', months:6},
+      {ref:'Wazzup MAX', qty:1, months:6, discount:10},
+    ],
+    work:['Настройка и интеграция amoCRM — базовая','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'amoCRM Расширенный · с телефонией', platform:'amoCRM',
     lic:[
       {ref:'amoCRM, Расширенный', qty:'users', months:6},
       {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:6},
@@ -434,30 +487,21 @@ var TEMPLATES = [
     work:['Настройка и интеграция amoCRM — базовая + телефония','Техническая поддержка, 1 месяц']
   },
   {
-    name:'amoCRM + телефония — год', platform:'amoCRM',
+    name:'amoCRM Профессиональный · без телефонии', platform:'amoCRM',
     lic:[
-      {ref:'amoCRM, Расширенный', qty:'users', months:12},
-      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:12},
-      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
+      {ref:'amoCRM, Профессиональный', qty:'users', months:6},
+      {ref:'Wazzup MAX', qty:1, months:6, discount:10},
+    ],
+    work:['Настройка и интеграция amoCRM — базовая','Техническая поддержка, 1 месяц']
+  },
+  {
+    name:'amoCRM Профессиональный · с телефонией', platform:'amoCRM',
+    lic:[
+      {ref:'amoCRM, Профессиональный', qty:'users', months:6},
+      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:6},
+      {ref:'Wazzup MAX', qty:1, months:6, discount:10},
     ],
     work:['Настройка и интеграция amoCRM — базовая + телефония','Техническая поддержка, 1 месяц']
-  },
-  {
-    name:'Битрикс24 + телефония — год', platform:'Битрикс24',
-    lic:[
-      {auto:'bitrix24', period:'year', qty:1},
-      {ref:'Облачная АТС Sipuni, Базовый', qty:'users', months:12},
-      {ref:'Wazzup MAX', qty:1, months:12, discount:20},
-    ],
-    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
-  },
-  {
-    name:'Битрикс24 — старт (без телефонии)', platform:'Битрикс24',
-    lic:[
-      {auto:'bitrix24', period:'year', qty:1},
-      {ref:'Wazzup PRO', qty:1, months:12, discount:20},
-    ],
-    work:['Внедрение Битрикс24 — Базовый пакет','Техническая поддержка, 1 месяц']
   },
 ];
 
