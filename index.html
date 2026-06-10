@@ -287,8 +287,11 @@
       <label class="f">Название компании в КП
         <input id="s-company" value="Automate Systems · automate.kz">
       </label>
+      <label class="f" style="background:var(--brand-soft);border-radius:8px;padding:8px 10px">Курс ₽ → ₸ (для виджетов F5)
+        <input id="s-rub-rate" type="number" step="0.01" min="0" value="6.7" oninput="applyRate(this.value)">
+      </label>
     </div>
-    <p class="hint">Цены ниже взяты из ваших КП как стартовые. Отредактируйте под актуальные партнёрские условия — изменения сразу попадают в конструктор и <b>автоматически сохраняются в этом браузере</b>: при следующем открытии будут ваши цены.</p>
+    <p class="hint">Позиции, привязанные к рублю (виджеты F5), автоматически пересчитываются в тенге по этому курсу — меняете курс, и их цены обновляются и в прайсе, и в уже собранном КП.</p>
   </div>
 
   <div class="card">
@@ -356,15 +359,18 @@ var CATALOG = {
     {name:'amoCRM, Базовый', desc:'5 000 контактов и 500 сделок на пользователя (подписка от 6 мес)', price:5199, unit:'польз/мес', months:6, discount:0},
     {name:'amoCRM, Расширенный', desc:'10 000 контактов, 1 000 сделок, digital-воронка (подписка от 6 мес)', price:9899, unit:'польз/мес', months:6, discount:0},
     {name:'amoCRM, Профессиональный', desc:'20 000 контактов, 3 000 сделок, скоринг (подписка от 6 мес)', price:15099, unit:'польз/мес', months:6, discount:0},
-    {name:'Wazzup START', desc:'1 канал, 50 диалогов, можно писать первым', price:6700, unit:'канал/мес', months:1, discount:0},
-    {name:'Wazzup START — 6 мес (-10%)', desc:'1 канал, 50 диалогов, оплата на полгода', price:6700, unit:'канал/мес', months:6, discount:10},
-    {name:'Wazzup START — год (-20%)', desc:'1 канал, 50 диалогов, оплата на год', price:6700, unit:'канал/мес', months:12, discount:20},
-    {name:'Wazzup PRO', desc:'1 канал, 500 диалогов, групповые чаты', price:26600, unit:'канал/мес', months:1, discount:0},
-    {name:'Wazzup PRO — 6 мес (-10%)', desc:'1 канал, 500 диалогов, оплата на полгода', price:26600, unit:'канал/мес', months:6, discount:10},
-    {name:'Wazzup PRO — год (-20%)', desc:'1 канал, 500 диалогов, оплата на год', price:26600, unit:'канал/мес', months:12, discount:20},
-    {name:'Wazzup MAX', desc:'1 канал, безлимит диалогов, расшифровка аудио', price:39900, unit:'канал/мес', months:1, discount:0},
-    {name:'Wazzup MAX — 6 мес (-10%)', desc:'1 канал, безлимит, оплата на полгода', price:39900, unit:'канал/мес', months:6, discount:10},
-    {name:'Wazzup MAX — год (-20%)', desc:'1 канал, безлимит, оплата на год', price:39900, unit:'канал/мес', months:12, discount:20},
+    {name:'Wazzup START', desc:'1 канал, 50 диалогов, можно писать первым', price:6000, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup START — 6 мес (-10%)', desc:'1 канал, 50 диалогов, оплата на полгода', price:6000, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup START — год (-20%)', desc:'1 канал, 50 диалогов, оплата на год', price:6000, unit:'канал/мес', months:12, discount:20},
+    {name:'Wazzup INBOX', desc:'1 канал, 500 диалогов, без «писать первым»', price:12000, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup INBOX — 6 мес (-10%)', desc:'1 канал, 500 диалогов, оплата на полгода', price:12000, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup INBOX — год (-20%)', desc:'1 канал, 500 диалогов, оплата на год', price:12000, unit:'канал/мес', months:12, discount:20},
+    {name:'Wazzup PRO', desc:'1 канал, 500 диалогов, групповые чаты, можно писать первым', price:24000, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup PRO — 6 мес (-10%)', desc:'1 канал, 500 диалогов, оплата на полгода', price:24000, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup PRO — год (-20%)', desc:'1 канал, 500 диалогов, оплата на год', price:24000, unit:'канал/мес', months:12, discount:20},
+    {name:'Wazzup MAX', desc:'1 канал, безлимит диалогов, расшифровка аудио', price:36000, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup MAX — 6 мес (-10%)', desc:'1 канал, безлимит, оплата на полгода', price:36000, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup MAX — год (-20%)', desc:'1 канал, безлимит, оплата на год', price:36000, unit:'канал/мес', months:12, discount:20},
     {name:'Облачная АТС Sipuni, Базовый', desc:'SIP-телефония, интеграция с CRM, запись разговоров', price:3600, unit:'польз/мес', months:6, discount:0},
     {name:'Облачная АТС Sipuni, Расширенный', desc:'распределение по данным CRM, хранение записей 1 год', price:6700, unit:'польз/мес', months:6, discount:0},
     {name:'Сервис Документы', desc:'генерация документов (договор, КП) из карточки сделки', price:12000, unit:'мес', months:6, discount:0},
@@ -372,6 +378,13 @@ var CATALOG = {
     {name:'Виджет Тригеры (на пользователя)', desc:'выгрузка из карточки сделки в Google Таблицу', price:4700, unit:'польз/мес', months:6, discount:0},
     {name:'Интеграция с Telegram', desc:'сообщения о движениях сделок в Telegram', price:5000, unit:'мес', months:6, discount:0},
     {name:'Интеграция с Яндекс Доставкой', desc:'автоотправка заказа в Яндекс Доставку', price:13200, unit:'мес', months:6, discount:0},
+    {name:'F5 · Подписка Base', desc:'67 виджетов F5 (кроме Chatter, Процессы, 1С). Мин. 5 польз., при продлении amoCRM через F5', price:8703, unit:'польз/мес', months:12, discount:0, rub:1299},
+    {name:'F5 · Подписка Pro', desc:'Все из Base + Процессы + Chatter. Мин. 5 польз.', price:16073, unit:'польз/мес', months:12, discount:0, rub:2399},
+    {name:'F5 · Подписка Ultima', desc:'Все из Pro + интеграция с 1С + сопровождение. Мин. 5 польз.', price:20093, unit:'польз/мес', months:12, discount:0, rub:2999},
+    {name:'F5 · Триггеры', desc:'NO CODE автоматизация (отдельный виджет)', price:4683, unit:'польз/мес', months:12, discount:0, rub:699},
+    {name:'F5 · Документы', desc:'генерация документов в 2 клика (отдельный виджет)', price:2673, unit:'польз/мес', months:12, discount:0, rub:399},
+    {name:'F5 · Процессы (BPMN)', desc:'визуальный редактор бизнес-процессов с AI', price:8703, unit:'польз/мес', months:12, discount:0, rub:1299},
+    {name:'F5 · Chatter', desc:'WhatsApp Business (WABA) + Telegram, ВК, Авито в amoCRM', price:36850, unit:'польз/мес', months:12, discount:0, rub:5500},
   ],
   works: [
     {name:'Внедрение Битрикс24 — Базовый пакет', price:400000, desc:
@@ -527,7 +540,7 @@ function applyTemplate(){
             qty: s.qty==='users' ? users : (s.qty||1),
             months: s.months ?? c.months ?? 1,
             discount: s.discount ?? c.discount ?? 0,
-            group: licGroup(c.name)};
+            group: licGroup(c.name), rub: c.rub};
   });
   state.work = tpl.work.map(wn=>{ const w=CATALOG.works.find(x=>x.name===wn); return w?{...w,qty:1}:null; }).filter(Boolean);
   $('p-platform').value = tpl.platform;
@@ -575,6 +588,7 @@ function refreshPicks(){
 /* ════════ Лицензии ════════ */
 function licGroup(name){
   const n = name||'';
+  if(/^F5\b|F5 ·/i.test(n)) return 'Виджеты amoCRM (F5)';
   if(/Битрикс/i.test(n)) return 'Битрикс24';
   if(/amoCRM/i.test(n)) return 'amoCRM';
   if(/Wazzup/i.test(n)) return 'Wazzup';
@@ -584,7 +598,7 @@ function licGroup(name){
 }
 function addLicFromPick(){
   const c = CATALOG.licenses[+$('lic-pick').value];
-  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:c.months||1, discount:c.discount||0, group:licGroup(c.name)});
+  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:c.months||1, discount:c.discount||0, group:licGroup(c.name), rub:c.rub});
   renderLic();
 }
 function addLic(){ state.lic.push({name:'',desc:'',price:0,qty:1,months:1,discount:0,group:'Прочее'}); renderLic(); }
@@ -713,7 +727,9 @@ function renderPrice(){
   $('price-lic-body').innerHTML = CATALOG.licenses.map((x,i)=>`<tr>
     <td><input value="${esc(x.name)}" oninput="CATALOG.licenses[${i}].name=this.value;refreshPicks()"></td>
     <td><textarea oninput="CATALOG.licenses[${i}].desc=this.value">${esc(x.desc)}</textarea></td>
-    <td class="num"><input type="number" value="${x.price}" oninput="CATALOG.licenses[${i}].price=+this.value;refreshPicks()"></td>
+    <td class="num">${x.rub
+      ? `<input type="number" value="${x.price}" readonly title="Считается от рубля по курсу" style="background:#f1f5fb;color:#475467"><div class="hint" style="margin:2px 0 0">${x.rub} ₽ × ${RATE}</div>`
+      : `<input type="number" value="${x.price}" oninput="CATALOG.licenses[${i}].price=+this.value;refreshPicks()">`}</td>
     <td><input value="${esc(x.unit||'мес')}" oninput="CATALOG.licenses[${i}].unit=this.value;refreshPicks()"></td>
     <td class="num"><input type="number" value="${x.months||1}" min="1" title="Срок по умолчанию" oninput="CATALOG.licenses[${i}].months=+this.value;saveCatalog()"></td>
     <td class="num"><input type="number" value="${x.discount||0}" min="0" max="100" title="Скидка по умолчанию, %" oninput="CATALOG.licenses[${i}].discount=+this.value;saveCatalog()"></td>
@@ -728,6 +744,27 @@ function renderPrice(){
 }
 function addPriceLic(){ CATALOG.licenses.push({name:'',desc:'',price:0,unit:'мес',months:1,discount:0}); renderPrice(); refreshPicks(); }
 function addPriceWork(){ CATALOG.works.push({name:'',desc:'',price:0}); renderPrice(); refreshPicks(); }
+
+/* ════════ Курс ₽→₸ и пересчёт привязанных к рублю позиций ════════ */
+const RATE_KEY = 'automate_kz_rate_v1';
+var RATE = 6.7;
+function rubToKzt(rub){ return Math.round((rub*RATE)/10)*10; }
+function computeCatalogPrices(){
+  CATALOG.licenses.forEach(x=>{ if(x.rub) x.price = rubToKzt(x.rub); });
+}
+function saveRate(){ try{ localStorage.setItem(RATE_KEY, String(RATE)); }catch(e){} }
+function loadRate(){
+  try{ const v = parseFloat(localStorage.getItem(RATE_KEY)); if(v>0) RATE = v; }catch(e){}
+  const inp = $('s-rub-rate'); if(inp) inp.value = RATE;
+}
+function applyRate(v){
+  const r = parseFloat(v);
+  RATE = (r>0) ? r : 6.7;
+  saveRate();
+  computeCatalogPrices();                                  // цены в каталоге
+  state.lic.forEach(rw=>{ if(rw.rub) rw.price = rubToKzt(rw.rub); }); // уже добавленные строки
+  refreshPicks(); renderPrice(); renderLic();
+}
 
 /* ════════ Автосохранение прайса в браузере ════════ */
 const LS_KEY = 'automate_kz_catalog_v2';
@@ -747,7 +784,7 @@ function loadCatalog(){
     if(!s) return false;
     const j = JSON.parse(s);
     if(Array.isArray(j.licenses) && Array.isArray(j.works)){
-      CATALOG.licenses = j.licenses.map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0,unit:x.unit||'мес',months:+x.months||1,discount:+x.discount||0}));
+      CATALOG.licenses = j.licenses.map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0,unit:x.unit||'мес',months:+x.months||1,discount:+x.discount||0,rub:(x.rub?+x.rub:undefined)}));
       CATALOG.works = j.works.map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0}));
       return true;
     }
@@ -770,7 +807,7 @@ function importConfig(e){
   const r = new FileReader();
   r.onload = () => { try{
     const j=JSON.parse(r.result);
-    CATALOG.licenses=(j.licenses||[]).map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0,unit:x.unit||'мес',months:+x.months||1,discount:+x.discount||0}));
+    CATALOG.licenses=(j.licenses||[]).map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0,unit:x.unit||'мес',months:+x.months||1,discount:+x.discount||0,rub:(x.rub?+x.rub:undefined)}));
     CATALOG.works=(j.works||[]).map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0}));
     renderPrice(); refreshPicks(); toast('Прайс загружен: '+CATALOG.licenses.length+' лиц., '+CATALOG.works.length+' работ');
   }catch(err){ alert('Не удалось прочитать JSON'); } };
@@ -780,13 +817,15 @@ function importConfig(e){
 /* ════════ Старт: типовой набор «Б24 Стандарт год + Wazzup MAX год + Sipuni» ════════ */
 $('p-date').value = new Date().toISOString().slice(0,10);
 loadCatalog();              // подтянуть сохранённые цены, если есть
+loadRate();                 // подтянуть курс ₽→₸
+computeCatalogPrices();     // пересчитать привязанные к рублю позиции (F5)
 refreshPicks(); renderPrice(); refreshTemplates();
 $('tpl-apply').addEventListener('click', applyTemplate);
-function fromCat(i, extra){ const c=CATALOG.licenses[i]; return {...c, group:licGroup(c.name), ...extra}; }
+function fromCatName(name, extra){ const c=CATALOG.licenses.find(x=>x.name===name)||{name,desc:'',price:0,unit:'мес',months:1,discount:0}; return {...c, group:licGroup(c.name), rub:c.rub, ...extra}; }
 state.lic.push(
-  fromCat(3,  {qty:1, months:12, discount:30}),   // Битрикс24 Стандартный — год (-30%)
-  fromCat(18, {qty:1, months:12, discount:20}),   // Wazzup MAX — год (-20%)
-  fromCat(19, {qty:4, months:6,  discount:0}),    // Sipuni Базовый, 4 польз × 6 мес
+  fromCatName('Битрикс24, Стандартный — год (-30%)', {qty:1, months:12, discount:30}),
+  fromCatName('Wazzup MAX — год (-20%)',             {qty:1, months:12, discount:20}),
+  fromCatName('Облачная АТС Sipuni, Базовый',        {qty:4, months:6,  discount:0}),
 );
 state.work.push(
   {...CATALOG.works[0], qty:1},
