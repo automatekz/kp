@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Калькулятор КП — automate.kz</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --ink:#101828; --muted:#5b6675; --line:#e3e7ee;
+    --bg:#f3f5f9; --card:#ffffff;
+    --brand:#0a47e6; --brand-dark:#0833a8; --brand-soft:#eaf0ff;
+    --accent:#00b86b; --warn:#b54708; --danger:#c0271f;
+    --mono:'Consolas','SF Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+
+  /* ── Шапка приложения ── */
+  header.app{background:var(--ink);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:18px;letter-spacing:.5px}
+  .logo span{color:#6f9bff}
+  .app-sub{color:#9aa6b8;font-size:13px}
+  nav.tabs{margin-left:auto;display:flex;gap:6px}
+  nav.tabs button{background:transparent;color:#c2cbd9;border:1px solid #3a4658;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer}
+  nav.tabs button.active{background:var(--brand);border-color:var(--brand);color:#fff}
+
+  main{max-width:1080px;margin:0 auto;padding:20px 16px 120px}
+  .tabpane{display:none}.tabpane.active{display:block}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  .card h2{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .card h2 .tag{font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--line);padding:2px 8px;border-radius:99px}
+
+  .grid{display:grid;gap:12px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:760px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:480px){.g3,.g4{grid-template-columns:1fr}}
+
+  label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:600}
+  input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink);width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  input[type=number]{font-family:var(--mono)}
+  textarea{resize:vertical;min-height:60px}
+
+  table.items{width:100%;border-collapse:collapse;font-size:13px}
+  table.items th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line)}
+  table.items td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.items td input,table.items td select,table.items td textarea{padding:6px 8px;font-size:13px}
+  td.num{width:84px}
+  td.sum{font-family:var(--mono);font-weight:700;text-align:right;white-space:nowrap;width:110px}
+  .rowdel{background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:4px}
+  .subt{display:flex;justify-content:flex-end;gap:14px;font-weight:700;padding:10px 8px 0;font-size:14px}
+  .subt b{font-family:var(--mono)}
+
+  .btn{display:inline-flex;align-items:center;gap:6px;background:var(--brand);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  .btn:hover{background:var(--brand-dark)}
+  .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+  .btn.soft{background:var(--brand-soft);color:var(--brand-dark)}
+
+  /* ── Липкая панель итога ── */
+  .totalbar{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:12px 24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;z-index:50;box-shadow:0 -4px 20px rgba(16,24,40,.25)}
+  .totalbar .t{display:flex;flex-direction:column}
+  .totalbar .t small{color:#9aa6b8;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .totalbar .t b{font-family:var(--mono);font-size:16px}
+  .totalbar .t.main b{font-size:22px;color:#7df0b4}
+  .totalbar .actions{margin-left:auto;display:flex;gap:8px}
+
+  /* ── Предпросмотр КП ── */
+  .kp-sheet{background:#fff;border:1px solid var(--line);border-radius:4px;max-width:900px;margin:0 auto;padding:36px 40px;font-size:13px;color:#111}
+  .kp-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--brand);padding-bottom:14px;margin-bottom:16px}
+  .kp-logo{font-size:22px;font-weight:800;letter-spacing:.5px}
+  .kp-logo span{color:var(--brand)}
+  .kp-logo small{display:block;font-size:11px;font-weight:400;color:#667085;letter-spacing:0}
+  .kp-title{text-align:right}
+  .kp-title h1{font-size:18px;margin-bottom:4px}
+  .kp-title div{font-size:12px;color:#475467}
+  .kp-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin-bottom:18px;font-size:12.5px}
+  .kp-meta div b{font-weight:600}
+  .kp-sec{font-weight:700;background:var(--brand-soft);color:var(--brand-dark);padding:6px 10px;border-radius:4px;margin:16px 0 6px;font-size:13px}
+  table.kp{width:100%;border-collapse:collapse;font-size:12px}
+  table.kp th{background:#f4f6fa;border:1px solid #d6dce6;padding:6px;font-size:11px;text-align:center}
+  table.kp td{border:1px solid #d6dce6;padding:6px;vertical-align:top}
+  table.kp td.c{text-align:center;white-space:nowrap}
+  table.kp td.r{text-align:right;font-family:var(--mono);white-space:nowrap}
+  table.kp td.desc{color:#374151;white-space:pre-line}
+  tr.kp-sub td{font-weight:700;background:#fafbfd}
+  .kp-total{display:flex;justify-content:flex-end;margin-top:14px}
+  .kp-total .box{background:var(--ink);color:#fff;border-radius:6px;padding:12px 22px;text-align:right}
+  .kp-total .box small{display:block;font-size:11px;color:#9aa6b8;text-transform:uppercase;letter-spacing:.05em}
+  .kp-total .box b{font-size:20px;font-family:var(--mono)}
+  .kp-foot{margin-top:20px;border-top:1px solid #d6dce6;padding-top:10px;font-size:11.5px;color:#475467}
+  .kp-foot p{margin-bottom:4px}
+
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .pill-add{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+  /* ── Мобильная адаптация: таблицы → карточки ── */
+  @media(max-width:680px){
+    main{padding:12px 10px 150px}
+    .card{padding:14px}
+    header.app{padding:12px 14px}
+    nav.tabs{width:100%;margin-left:0}
+    nav.tabs button{flex:1;padding:8px 6px;font-size:12px}
+    .grid.g4,.grid.g3{grid-template-columns:1fr}
+    table.items thead{display:none}
+    table.items,table.items tbody,table.items tr,table.items td{display:block;width:100%}
+    table.items tr{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:10px;position:relative}
+    table.items td{border:none;padding:5px 4px}
+    table.items td.num,td.sum{width:100%}
+    table.items td::before{content:attr(data-l);display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:2px}
+    td.sum{text-align:left;background:var(--brand-soft);border-radius:6px;padding:6px 8px;font-size:14px}
+    .rowdel{position:absolute;top:6px;right:6px}
+    .kp-sheet{padding:16px 14px}
+    .kp-head{flex-direction:column;gap:10px}
+    .kp-title{text-align:left}
+    .kp-meta{grid-template-columns:1fr}
+    table.kp,table.kp tbody,table.kp tr,table.kp td{display:block;width:100%}
+    table.kp tr{border:1px solid #d6dce6;border-radius:8px;margin-bottom:8px;padding:6px}
+    table.kp td{border:none;text-align:left!important}
+    table.kp th{display:none}
+    .totalbar{gap:12px;padding:10px 12px}
+    .totalbar .t small{font-size:10px}
+    .totalbar .t b{font-size:14px}
+    .totalbar .t.main b{font-size:18px}
+    .totalbar .actions{width:100%;margin-left:0}
+    .totalbar .actions .btn{flex:1}
+  }
+
+  .wa-btn{background:#25d366;color:#fff}
+  .wa-btn:hover{background:#1da851}
+
+  /* ── Печать: только лист КП ── */
+  @media print{
+    body{background:#fff}
+    header.app,nav.tabs,.totalbar,.no-print{display:none!important}
+    main{max-width:none;padding:0}
+    .tabpane{display:none!important}
+    #pane-kp{display:block!important}
+    .kp-sheet{border:none;border-radius:0;padding:10mm 8mm;max-width:none;font-size:12px}
+    .kp-sec{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    table.kp th,.kp-total .box,.kp-head{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tr{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div>
+    <div class="logo">AUTOMATE<span>.KZ</span></div>
+    <div class="app-sub">Калькулятор коммерческих предложений</div>
+  </div>
+  <nav class="tabs no-print">
+    <button class="active" data-tab="calc">Конструктор</button>
+    <button data-tab="kp">Предпросмотр КП</button>
+    <button data-tab="price">Прайс и настройки</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ════════ КОНСТРУКТОР ════════ -->
+<section id="pane-calc" class="tabpane active">
+
+  <div class="card">
+    <h2>Параметры предложения</h2>
+    <div class="grid g4">
+      <label class="f">Клиент / компания
+        <input id="p-client" placeholder="ТОО «Пример»">
+      </label>
+      <label class="f">Телефон клиента (WhatsApp)
+        <input id="p-clientphone" placeholder="+7 700 000 00 00" inputmode="tel">
+      </label>
+      <label class="f">Дата составления
+        <input id="p-date" type="date">
+      </label>
+      <label class="f">Срок выполнения работ
+        <input id="p-term" value="до 10 рабочих дней">
+      </label>
+      <label class="f">Кол-во сотрудников
+        <input id="p-staff" value="5 сотрудников">
+      </label>
+      <label class="f">Предоплата за работы, %
+        <input id="p-prepay" type="number" value="50" min="0" max="100">
+      </label>
+      <label class="f">Заголовок варианта
+        <input id="p-variant" placeholder="Например: Стандарт, 1 год, с телефонией">
+      </label>
+      <label class="f">Платформа (для текста КП)
+        <select id="p-platform">
+          <option>Битрикс24</option>
+          <option>amoCRM</option>
+          <option>Битрикс24 + ИИ-агент</option>
+          <option>amoCRM + ИИ-агент</option>
+        </select>
+      </label>
+      <label class="f">Номер КП
+        <input id="p-num" placeholder="№ 231">
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Лицензии <span class="tag">периодическая оплата согласно тарифам</span></h2>
+    <table class="items">
+      <thead><tr>
+        <th style="width:24%">Наименование</th><th>Описание</th>
+        <th style="width:100px">Цена, ₸</th><th style="width:70px">Кол-во</th>
+        <th style="width:70px">Срок, мес</th><th style="width:110px;text-align:right">Сумма, ₸</th><th></th>
+      </tr></thead>
+      <tbody id="lic-body"></tbody>
+    </table>
+    <div class="pill-add">
+      <select id="lic-pick" style="max-width:420px"></select>
+      <button class="btn soft" onclick="addLicFromPick()">+ Добавить из прайса</button>
+      <button class="btn ghost" onclick="addLic()">+ Пустая строка</button>
+    </div>
+    <div class="subt">Стоимость лицензий: <b id="lic-sub">0 ₸</b></div>
+  </div>
+
+  <div class="card">
+    <h2>Работы по внедрению и настройке <span class="tag">разовая оплата</span></h2>
+    <table class="items">
+      <thead><tr>
+        <th style="width:26%">Наименование</th><th>Описание</th>
+        <th style="width:110px">Цена, ₸</th><th style="width:70px">Кол-во</th>
+        <th style="width:110px;text-align:right">Сумма, ₸</th><th></th>
+      </tr></thead>
+      <tbody id="work-body"></tbody>
+    </table>
+    <div class="pill-add">
+      <select id="work-pick" style="max-width:420px"></select>
+      <button class="btn soft" onclick="addWorkFromPick()">+ Добавить из прайса</button>
+      <button class="btn ghost" onclick="addWork()">+ Пустая строка</button>
+    </div>
+    <div class="subt">Стоимость работ: <b id="work-sub">0 ₸</b></div>
+  </div>
+
+</section>
+
+<!-- ════════ ПРЕДПРОСМОТР КП ════════ -->
+<section id="pane-kp" class="tabpane">
+  <div class="no-print" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn wa-btn" onclick="shareWhatsApp()">💬 Отправить в WhatsApp</button>
+    <button class="btn ghost" onclick="copyKPText()">📋 Скопировать текст КП</button>
+    <button class="btn" onclick="window.print()">🖨 Печать / PDF</button>
+  </div>
+  <div class="kp-sheet" id="kp-sheet"></div>
+</section>
+
+<!-- ════════ ПРАЙС ════════ -->
+<section id="pane-price" class="tabpane">
+  <div class="card">
+    <h2>Реквизиты и условия</h2>
+    <div class="grid g3">
+      <label class="f">Телефон в КП
+        <input id="s-phone" value="+7 700 300 17 55">
+      </label>
+      <label class="f">Ставка после техподдержки, ₸/час
+        <input id="s-rate" type="number" value="10000">
+      </label>
+      <label class="f">Название компании в КП
+        <input id="s-company" value="Automate Systems · automate.kz">
+      </label>
+    </div>
+    <p class="hint">Цены ниже взяты из ваших КП как стартовые. Отредактируйте под актуальные партнёрские условия — изменения сразу попадают в выпадающие списки конструктора.</p>
+  </div>
+
+  <div class="card">
+    <h2>Прайс: лицензии и сервисы</h2>
+    <table class="items">
+      <thead><tr><th style="width:26%">Наименование</th><th>Описание по умолчанию</th><th style="width:110px">Цена, ₸</th><th style="width:120px">Ед.</th><th></th></tr></thead>
+      <tbody id="price-lic-body"></tbody>
+    </table>
+    <div class="pill-add"><button class="btn ghost" onclick="addPriceLic()">+ Добавить позицию</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Прайс: пакеты работ</h2>
+    <table class="items">
+      <thead><tr><th style="width:26%">Наименование</th><th>Описание по умолчанию</th><th style="width:110px">Цена, ₸</th><th></th></tr></thead>
+      <tbody id="price-work-body"></tbody>
+    </table>
+    <div class="pill-add"><button class="btn ghost" onclick="addPriceWork()">+ Добавить пакет</button></div>
+  </div>
+
+  <div class="card no-print">
+    <h2>Сохранение прайса</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ghost" onclick="exportConfig()">⬇ Скачать прайс (JSON)</button>
+      <label class="btn ghost" style="cursor:pointer">⬆ Загрузить прайс (JSON)
+        <input type="file" accept=".json" style="display:none" onchange="importConfig(event)">
+      </label>
+    </div>
+    <p class="hint">Прайс живёт в памяти страницы. Скачайте JSON после правок и загружайте при следующем открытии — либо вшейте изменения прямо в код (объект CATALOG в начале скрипта).</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ════════ ЛИПКИЙ ИТОГ ════════ -->
+<div class="totalbar no-print">
+  <div class="t"><small>Лицензии</small><b id="tb-lic">0 ₸</b></div>
+  <div class="t"><small>Работы</small><b id="tb-work">0 ₸</b></div>
+  <div class="t"><small>Предоплата за работы</small><b id="tb-prepay">0 ₸</b></div>
+  <div class="t main"><small>Итого проект</small><b id="tb-total">0 ₸</b></div>
+  <div class="actions">
+    <button class="btn" onclick="showTab('kp')">Сформировать КП →</button>
+  </div>
+</div>
+
+<script>
+/* ════════ КАТАЛОГ (стартовые цены — из ваших КП, правится во вкладке «Прайс») ════════ */
+const CATALOG = {
+  licenses: [
+    {name:'Битрикс24, тариф Базовый', desc:'до 5 пользователей, 24 Гб на диске, облако', price:12480, unit:'портал/мес'},
+    {name:'Битрикс24, тариф Стандарт', desc:'до 50 человек, до 100 Гб на диске', price:44080, unit:'портал/мес'},
+    {name:'Битрикс24, тариф Стандарт — 1 год', desc:'лицензия на 1 год (со скидкой партнёра)', price:370272, unit:'портал/год'},
+    {name:'Битрикс24, тариф Профессиональный', desc:'до 100 пользователей, 1024 Гб на диске', price:88160, unit:'портал/мес'},
+    {name:'amoCRM, тариф Базовый', desc:'базовые возможности CRM', price:6500, unit:'польз/мес'},
+    {name:'amoCRM, тариф Расширенный', desc:'+ digital-воронка, обяз. поля, KPI', price:9500, unit:'польз/мес'},
+    {name:'amoCRM, тариф Профессиональный', desc:'+ скоринг, периодические покупки', price:13500, unit:'польз/мес'},
+    {name:'Сервис Wazzup, тариф Pro', desc:'подключение WhatsApp, до 500 диалогов в месяц, 1 номер, интеграция с CRM', price:24000, unit:'номер/мес'},
+    {name:'Сервис Wazzup, тариф Max', desc:'без ограничений по количеству диалогов с клиентом, 1 номер WhatsApp', price:36000, unit:'номер/мес'},
+    {name:'Облачная АТС Sipuni, тариф Базовый', desc:'SIP-телефония с интеграцией в CRM', price:3600, unit:'польз/мес'},
+    {name:'Облачная АТС Sipuni, тариф Расширенный', desc:'SIP-телефония, расширенные сценарии', price:6700, unit:'польз/мес'},
+    {name:'Сервис Документы', desc:'генерация документов (договор, КП) из карточки сделки', price:12000, unit:'мес'},
+    {name:'Тригеры — конструктор автодействий', desc:'конструктор автоматических действий в amoCRM', price:22750, unit:'мес'},
+    {name:'Виджет Тригеры (на пользователя)', desc:'выгрузка информации из карточки сделки в Google Таблицу', price:4700, unit:'польз/мес'},
+    {name:'Интеграция с Telegram', desc:'отправка сообщений о движениях сделок в личку или группу Telegram', price:5000, unit:'мес'},
+    {name:'Интеграция с Яндекс Доставкой', desc:'автоматическая отправка заказа в Яндекс Доставку', price:13200, unit:'мес'},
+  ],
+  works: [
+    {name:'Внедрение Битрикс24 — Базовый пакет', price:400000, desc:
+`Работы по интеграции и настройке портала:
+— приглашение пользователей
+— настройка воронки продаж и этапов, до 2 воронок
+— настройка дополнительных полей (Сделка)
+— настройка прав доступа к CRM
+— настройка и подключение Wazzup
+— настройка роботов в CRM
+Подключение каналов коммуникаций:
+— интеграция с Instagram Direct, Facebook (сообщения, комментарии, заявки в CRM)
+— настройка открытой линии
+Подключение телефонии:
+— подключение и маршрутизация
+— интеграция с Битрикс24, настройка софтфонов`},
+    {name:'Настройка и интеграция amoCRM — базовая', price:300000, desc:
+`Настройка amoCRM:
+— заведение пользователей, права доступа
+— настройка карточки сделок
+— построение воронок и их этапов
+— подключение источников трафика (Instagram, Facebook, сайт, WhatsApp)
+— настройка рабочего стола по фильтрам (аналитика)
+Блок автоматизации:
+— автоматическая постановка задач менеджерам
+— тегирование сделок по источникам
+— автоматические напоминания менеджерам
+Обучение сотрудников`},
+    {name:'Настройка и интеграция amoCRM — базовая + телефония', price:450000, desc:
+`Базовая настройка amoCRM (пользователи, воронки, карточки, источники, автоматизация)
+Настройка IP-телефонии:
+— заведение номера в виртуальную АТС
+— настройка маршрутизации и голосового приветствия
+— интеграция с amoCRM, сценарии приёма звонков
+Обучение сотрудников`},
+    {name:'Дополнительные интеграции и автоматизация', price:300000, desc:'Настройка дополнительных функциональных возможностей по согласованному списку'},
+    {name:'Разработка чат-бота / ИИ-агента', price:400000, desc:'Сценарий, настройка, интеграция с CRM, обучение на материалах компании, тестирование'},
+    {name:'Техническая поддержка, 1 месяц', price:0, desc:'БОНУС: добавление пользователей, корректировки в рамках проведённых работ, обучение работе с порталом'},
+    {name:'Техническая поддержка со 2 месяца', price:100000, desc:'Корректировка настроек, мониторинг работы сервисов, консультации по работе с системой'},
+  ]
+};
+
+/* ════════ Состояние ════════ */
+const state = { lic: [], work: [] };
+const fmt = n => (Math.round(n)||0).toLocaleString('ru-RU') + ' ₸';
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $ = id => document.getElementById(id);
+
+/* ════════ Вкладки ════════ */
+function showTab(t){
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+  $('pane-'+t).classList.add('active');
+  if(t==='kp') renderKP();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+/* ════════ Списки выбора из прайса ════════ */
+function refreshPicks(){
+  $('lic-pick').innerHTML = CATALOG.licenses.map((x,i)=>`<option value="${i}">${esc(x.name)} — ${fmt(x.price)} / ${esc(x.unit||'мес')}</option>`).join('');
+  $('work-pick').innerHTML = CATALOG.works.map((x,i)=>`<option value="${i}">${esc(x.name)} — ${fmt(x.price)}</option>`).join('');
+}
+
+/* ════════ Лицензии ════════ */
+function addLicFromPick(){
+  const c = CATALOG.licenses[+$('lic-pick').value];
+  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:1});
+  renderLic();
+}
+function addLic(){ state.lic.push({name:'',desc:'',price:0,qty:1,months:1}); renderLic(); }
+function renderLic(){
+  $('lic-body').innerHTML = state.lic.map((r,i)=>`<tr>
+    <td data-l="Наименование"><input value="${esc(r.name)}" oninput="state.lic[${i}].name=this.value"></td>
+    <td data-l="Описание"><textarea oninput="state.lic[${i}].desc=this.value">${esc(r.desc)}</textarea></td>
+    <td class="num" data-l="Цена, ₸"><input type="number" value="${r.price}" oninput="state.lic[${i}].price=+this.value;calc()"></td>
+    <td class="num" data-l="Кол-во"><input type="number" value="${r.qty}" min="1" oninput="state.lic[${i}].qty=+this.value;calc()"></td>
+    <td class="num" data-l="Срок, мес"><input type="number" value="${r.months}" min="1" oninput="state.lic[${i}].months=+this.value;calc()"></td>
+    <td class="sum" data-l="Сумма" id="lic-sum-${i}"></td>
+    <td><button class="rowdel" title="Удалить" onclick="state.lic.splice(${i},1);renderLic()">✕</button></td>
+  </tr>`).join('');
+  calc();
+}
+
+/* ════════ Работы ════════ */
+function addWorkFromPick(){
+  const c = CATALOG.works[+$('work-pick').value];
+  state.work.push({name:c.name, desc:c.desc, price:c.price, qty:1});
+  renderWork();
+}
+function addWork(){ state.work.push({name:'',desc:'',price:0,qty:1}); renderWork(); }
+function renderWork(){
+  $('work-body').innerHTML = state.work.map((r,i)=>`<tr>
+    <td data-l="Наименование"><input value="${esc(r.name)}" oninput="state.work[${i}].name=this.value"></td>
+    <td data-l="Описание"><textarea oninput="state.work[${i}].desc=this.value">${esc(r.desc)}</textarea></td>
+    <td class="num" data-l="Цена, ₸"><input type="number" value="${r.price}" oninput="state.work[${i}].price=+this.value;calc()"></td>
+    <td class="num" data-l="Кол-во"><input type="number" value="${r.qty}" min="1" oninput="state.work[${i}].qty=+this.value;calc()"></td>
+    <td class="sum" data-l="Сумма" id="work-sum-${i}"></td>
+    <td><button class="rowdel" title="Удалить" onclick="state.work.splice(${i},1);renderWork()">✕</button></td>
+  </tr>`).join('');
+  calc();
+}
+
+/* ════════ Расчёт ════════ */
+function calc(){
+  let lic=0, work=0;
+  state.lic.forEach((r,i)=>{ const s=(r.price||0)*(r.qty||0)*(r.months||0); lic+=s; const el=$('lic-sum-'+i); if(el) el.textContent=fmt(s); });
+  state.work.forEach((r,i)=>{ const s=(r.price||0)*(r.qty||0); work+=s; const el=$('work-sum-'+i); if(el) el.textContent=fmt(s); });
+  const prepay = work * (+$('p-prepay').value||0)/100;
+  $('lic-sub').textContent=fmt(lic); $('work-sub').textContent=fmt(work);
+  $('tb-lic').textContent=fmt(lic); $('tb-work').textContent=fmt(work);
+  $('tb-prepay').textContent=fmt(prepay); $('tb-total').textContent=fmt(lic+work);
+  return {lic, work, prepay, total:lic+work};
+}
+$('p-prepay').addEventListener('input', calc);
+
+/* ════════ Генерация КП ════════ */
+function renderKP(){
+  const t = calc();
+  const d = $('p-date').value ? new Date($('p-date').value).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU');
+  const client = $('p-client').value, variant = $('p-variant').value;
+  const licRows = state.lic.map((r,i)=>`<tr>
+      <td class="c">${i+1}</td><td><b>${esc(r.name)}</b></td><td class="desc">${esc(r.desc)}</td>
+      <td class="r">${fmt(r.price)}</td><td class="c">${r.qty}</td><td class="c">${r.months}</td>
+      <td class="r">${fmt(r.price*r.qty*r.months)}</td></tr>`).join('');
+  const workRows = state.work.map((r,i)=>`<tr>
+      <td class="c">${i+1}</td><td><b>${esc(r.name)}</b>${r.price===0?' <span style="color:#00894f;font-weight:700">БОНУС</span>':''}</td>
+      <td class="desc">${esc(r.desc)}</td><td class="c">${r.qty}</td>
+      <td class="r">${fmt(r.price*r.qty)}</td></tr>`).join('');
+
+  $('kp-sheet').innerHTML = `
+    <div class="kp-head">
+      <div class="kp-logo">AUTOMATE<span>.KZ</span><small>${esc($('s-company').value)}</small></div>
+      <div class="kp-title">
+        <h1>Коммерческое предложение ${esc($('p-num').value)}</h1>
+        <div>Внедрение ${esc($('p-platform').value)}${variant? ' · '+esc(variant):''}</div>
+        ${client?`<div>для: <b>${esc(client)}</b></div>`:''}
+      </div>
+    </div>
+    <div class="kp-meta">
+      <div>Дата составления: <b>${d}</b></div>
+      <div>Срок выполнения работ: <b>${esc($('p-term').value)}</b></div>
+      <div>Кол-во сотрудников: <b>${esc($('p-staff').value)}</b></div>
+      <div>Предоплата за работы: <b>${$('p-prepay').value}% (${fmt(t.prepay)})</b></div>
+    </div>
+
+    <div class="kp-sec">Стоимость лицензий — периодическая оплата согласно тарифам</div>
+    <table class="kp">
+      <tr><th style="width:28px">№</th><th style="width:18%">Наименование</th><th>Описание</th><th style="width:80px">Цена</th><th style="width:48px">Кол-во</th><th style="width:54px">Срок, мес</th><th style="width:96px">Сумма</th></tr>
+      ${licRows || '<tr><td colspan="7" style="text-align:center;color:#98a2b3">позиции не добавлены</td></tr>'}
+      <tr class="kp-sub"><td colspan="6" style="text-align:right">Стоимость лицензий</td><td class="r">${fmt(t.lic)}</td></tr>
+    </table>
+
+    <div class="kp-sec">Стоимость работ по внедрению и настройке — разовая оплата</div>
+    <table class="kp">
+      <tr><th style="width:28px">№</th><th style="width:22%">Наименование</th><th>Описание</th><th style="width:48px">Кол-во</th><th style="width:96px">Сумма</th></tr>
+      ${workRows || '<tr><td colspan="5" style="text-align:center;color:#98a2b3">позиции не добавлены</td></tr>'}
+      <tr class="kp-sub"><td colspan="4" style="text-align:right">Стоимость работ</td><td class="r">${fmt(t.work)}</td></tr>
+    </table>
+
+    <div class="kp-total"><div class="box"><small>Итоговая стоимость проекта</small><b>${fmt(t.total)}</b></div></div>
+
+    <div class="kp-foot">
+      <p>После завершения технической поддержки дополнительные настройки проводятся согласно тарифу ${(+$('s-rate').value).toLocaleString('ru-RU')} тг/час.</p>
+      <p>Телефон по вопросам коммерческого предложения: <b>${esc($('s-phone').value)}</b></p>
+      <p>! Предоставленная информация не предназначена для распространения третьим лицам и относится к конфиденциальной информации.</p>
+    </div>`;
+}
+
+/* ════════ Прайс: редактирование ════════ */
+function renderPrice(){
+  $('price-lic-body').innerHTML = CATALOG.licenses.map((x,i)=>`<tr>
+    <td><input value="${esc(x.name)}" oninput="CATALOG.licenses[${i}].name=this.value;refreshPicks()"></td>
+    <td><textarea oninput="CATALOG.licenses[${i}].desc=this.value">${esc(x.desc)}</textarea></td>
+    <td class="num"><input type="number" value="${x.price}" oninput="CATALOG.licenses[${i}].price=+this.value;refreshPicks()"></td>
+    <td><input value="${esc(x.unit||'мес')}" oninput="CATALOG.licenses[${i}].unit=this.value;refreshPicks()"></td>
+    <td><button class="rowdel" onclick="CATALOG.licenses.splice(${i},1);renderPrice();refreshPicks()">✕</button></td>
+  </tr>`).join('');
+  $('price-work-body').innerHTML = CATALOG.works.map((x,i)=>`<tr>
+    <td><input value="${esc(x.name)}" oninput="CATALOG.works[${i}].name=this.value;refreshPicks()"></td>
+    <td><textarea oninput="CATALOG.works[${i}].desc=this.value">${esc(x.desc)}</textarea></td>
+    <td class="num"><input type="number" value="${x.price}" oninput="CATALOG.works[${i}].price=+this.value;refreshPicks()"></td>
+    <td><button class="rowdel" onclick="CATALOG.works.splice(${i},1);renderPrice();refreshPicks()">✕</button></td>
+  </tr>`).join('');
+}
+function addPriceLic(){ CATALOG.licenses.push({name:'',desc:'',price:0,unit:'мес'}); renderPrice(); refreshPicks(); }
+function addPriceWork(){ CATALOG.works.push({name:'',desc:'',price:0}); renderPrice(); refreshPicks(); }
+
+function exportConfig(){
+  const blob = new Blob([JSON.stringify(CATALOG,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'automate-kz-price.json'; a.click();
+}
+function importConfig(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { try{ const j=JSON.parse(r.result); CATALOG.licenses=j.licenses||[]; CATALOG.works=j.works||[]; renderPrice(); refreshPicks(); }catch(err){ alert('Не удалось прочитать JSON'); } };
+  r.readAsText(f);
+}
+
+/* ════════ Старт: типовой набор «Битрикс24 Стандарт + Wazzup + Sipuni» ════════ */
+$('p-date').value = new Date().toISOString().slice(0,10);
+refreshPicks(); renderPrice();
+state.lic.push(
+  {...CATALOG.licenses[1], qty:1, months:1},
+  {...CATALOG.licenses[8], qty:1, months:1},
+  {...CATALOG.licenses[9], qty:4, months:6},
+);
+state.work.push(
+  {...CATALOG.works[0], qty:1},
+  {...CATALOG.works[5], qty:1},
+);
+renderLic(); renderWork();
+
+/* ════════ Текст КП для мессенджеров ════════ */
+function buildKPText(){
+  const t = calc();
+  const d = $('p-date').value ? new Date($('p-date').value).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU');
+  const client = $('p-client').value, variant = $('p-variant').value;
+  let s = `*AUTOMATE.KZ — Коммерческое предложение ${$('p-num').value}*\n`;
+  s += `Внедрение ${$('p-platform').value}${variant?' · '+variant:''}\n`;
+  if(client) s += `Для: ${client}\n`;
+  s += `Дата: ${d} · Срок: ${$('p-term').value}\n`;
+  s += `Сотрудники: ${$('p-staff').value}\n`;
+  s += `\n*ЛИЦЕНЗИИ* (периодическая оплата)\n`;
+  state.lic.forEach((r,i)=>{ s += `${i+1}. ${r.name} — ${r.qty}×${r.months} мес = ${fmt(r.price*r.qty*r.months)}\n`; });
+  s += `Итого лицензии: ${fmt(t.lic)}\n`;
+  s += `\n*РАБОТЫ* (разовая оплата)\n`;
+  state.work.forEach((r,i)=>{ s += `${i+1}. ${r.name}${r.price===0?' (БОНУС)':''} = ${fmt(r.price*r.qty)}\n`; });
+  s += `Итого работы: ${fmt(t.work)}\n`;
+  s += `\n*ИТОГО ПРОЕКТ: ${fmt(t.total)}*\n`;
+  s += `Предоплата за работы ${$('p-prepay').value}%: ${fmt(t.prepay)}\n`;
+  s += `\nПосле ТП доп. настройки — ${(+$('s-rate').value).toLocaleString('ru-RU')} тг/час.\n`;
+  s += `Тел.: ${$('s-phone').value}`;
+  return s;
+}
+function waDigits(p){ return (p||'').replace(/\D/g,''); }
+function shareWhatsApp(){
+  const text = encodeURIComponent(buildKPText());
+  const num = waDigits($('p-clientphone').value);
+  const url = num ? `https://wa.me/${num}?text=${text}` : `https://wa.me/?text=${text}`;
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink){ Telegram.WebApp.openLink(url); }
+  else { window.open(url, '_blank'); }
+}
+function copyKPText(){
+  const text = buildKPText();
+  navigator.clipboard?.writeText(text).then(
+    ()=>toast('Текст КП скопирован'),
+    ()=>{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Текст КП скопирован'); }
+  );
+}
+function toast(msg){
+  if(window.Telegram && Telegram.WebApp && Telegram.WebApp.showPopup){ Telegram.WebApp.showPopup({message:msg}); return; }
+  const el=document.createElement('div'); el.textContent=msg;
+  el.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;padding:10px 18px;border-radius:8px;z-index:99;font-size:13px';
+  document.body.appendChild(el); setTimeout(()=>el.remove(),1800);
+}
+
+/* ════════ Telegram Mini App ════════ */
+(function initTelegram(){
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if(!tg) return;
+  tg.ready(); tg.expand();
+  const mb = tg.MainButton;
+  function syncMain(){
+    if($('pane-kp').classList.contains('active')){ mb.setText('Отправить в WhatsApp'); }
+    else { mb.setText('Сформировать КП'); }
+    mb.show();
+  }
+  mb.onClick(()=>{
+    if($('pane-kp').classList.contains('active')) shareWhatsApp();
+    else showTab('kp');
+    setTimeout(syncMain,50);
+  });
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>setTimeout(syncMain,50)));
+  syncMain();
+})();
+</script>
+</body>
+</html>
