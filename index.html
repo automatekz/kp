@@ -91,9 +91,9 @@
   tr.kp-group td{font-weight:700;background:var(--brand-soft);color:var(--brand-dark);font-size:12.5px;letter-spacing:.02em}
   tr.kp-gsub td{font-weight:600;background:#f7f9fc;color:#475467}
   .kp-total{display:flex;justify-content:flex-end;margin-top:14px}
-  .kp-total .box{background:var(--ink);color:#fff;border-radius:6px;padding:12px 22px;text-align:right}
-  .kp-total .box small{display:block;font-size:11px;color:#9aa6b8;text-transform:uppercase;letter-spacing:.05em}
-  .kp-total .box b{font-size:20px;font-family:var(--mono)}
+  .kp-total .box{background:#f3fbf7;border:1px solid #cfeede;color:#0f3d2c;border-radius:6px;padding:12px 22px;text-align:right}
+  .kp-total .box small{display:block;font-size:11px;color:#5b7a6c;text-transform:uppercase;letter-spacing:.05em}
+  .kp-total .box b{font-size:20px;font-family:var(--mono);color:#09a35f}
   .kp-foot{margin-top:20px;border-top:1px solid #d6dce6;padding-top:10px;font-size:11.5px;color:#475467}
   .kp-foot p{margin-bottom:4px}
 
@@ -297,7 +297,11 @@
       <thead><tr><th style="width:24%">Наименование</th><th>Описание по умолчанию</th><th style="width:100px">Цена/мес, ₸</th><th style="width:96px">Ед.</th><th style="width:70px">Срок, мес</th><th style="width:70px">Скидка, %</th><th></th></tr></thead>
       <tbody id="price-lic-body"></tbody>
     </table>
-    <div class="pill-add"><button class="btn ghost" onclick="addPriceLic()">+ Добавить позицию</button></div>
+    <div class="pill-add">
+      <button class="btn ghost" onclick="addPriceLic()">+ Добавить позицию</button>
+      <button class="btn" onclick="saveCatalogManual()">💾 Сохранить прайс</button>
+      <span id="price-saved" class="hint" style="align-self:center;margin:0"></span>
+    </div>
   </div>
 
   <div class="card">
@@ -306,7 +310,10 @@
       <thead><tr><th style="width:26%">Наименование</th><th>Описание по умолчанию</th><th style="width:110px">Цена, ₸</th><th></th></tr></thead>
       <tbody id="price-work-body"></tbody>
     </table>
-    <div class="pill-add"><button class="btn ghost" onclick="addPriceWork()">+ Добавить пакет</button></div>
+    <div class="pill-add">
+      <button class="btn ghost" onclick="addPriceWork()">+ Добавить пакет</button>
+      <button class="btn" onclick="saveCatalogManual()">💾 Сохранить прайс</button>
+    </div>
   </div>
 
   <div class="card no-print">
@@ -509,7 +516,14 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.
 
 /* ════════ Списки выбора из прайса ════════ */
 function refreshPicks(){
-  $('lic-pick').innerHTML = CATALOG.licenses.map((x,i)=>`<option value="${i}">${esc(x.name)} — ${fmt(x.price)} / ${esc(x.unit||'мес')}</option>`).join('');
+  // лицензии — сгруппированы по продуктам через optgroup, value = исходный индекс
+  const byGroup = {}; const order = [];
+  CATALOG.licenses.forEach((x,i)=>{
+    const g = licGroup(x.name);
+    if(!byGroup[g]){ byGroup[g]=[]; order.push(g); }
+    byGroup[g].push(`<option value="${i}">${esc(x.name)} — ${fmt(x.price)} / ${esc(x.unit||'мес')}</option>`);
+  });
+  $('lic-pick').innerHTML = order.map(g=>`<optgroup label="${esc(g)}">${byGroup[g].join('')}</optgroup>`).join('');
   $('work-pick').innerHTML = CATALOG.works.map((x,i)=>`<option value="${i}">${esc(x.name)} — ${fmt(x.price)}</option>`).join('');
   if(typeof saveCatalog==='function') saveCatalog();
 }
@@ -675,6 +689,13 @@ function addPriceWork(){ CATALOG.works.push({name:'',desc:'',price:0}); renderPr
 const LS_KEY = 'automate_kz_catalog_v2';
 function saveCatalog(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(CATALOG)); }catch(e){}
+}
+function saveCatalogManual(){
+  saveCatalog();
+  const t = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const el = document.getElementById('price-saved');
+  if(el) el.textContent = 'Сохранено в ' + t;
+  toast('Прайс сохранён');
 }
 function loadCatalog(){
   try{
