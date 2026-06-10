@@ -282,7 +282,7 @@
         <input id="s-company" value="Automate Systems · automate.kz">
       </label>
     </div>
-    <p class="hint">Цены ниже взяты из ваших КП как стартовые. Отредактируйте под актуальные партнёрские условия — изменения сразу попадают в выпадающие списки конструктора.</p>
+    <p class="hint">Цены ниже взяты из ваших КП как стартовые. Отредактируйте под актуальные партнёрские условия — изменения сразу попадают в конструктор и <b>автоматически сохраняются в этом браузере</b>: при следующем открытии будут ваши цены.</p>
   </div>
 
   <div class="card">
@@ -304,14 +304,15 @@
   </div>
 
   <div class="card no-print">
-    <h2>Сохранение прайса</h2>
+    <h2>Резервная копия и сброс</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn ghost" onclick="exportConfig()">⬇ Скачать прайс (JSON)</button>
       <label class="btn ghost" style="cursor:pointer">⬆ Загрузить прайс (JSON)
         <input type="file" accept=".json" style="display:none" onchange="importConfig(event)">
       </label>
+      <button class="btn ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetCatalog()">↺ Сбросить к стандартным</button>
     </div>
-    <p class="hint">Прайс живёт в памяти страницы. Скачайте JSON после правок и загружайте при следующем открытии — либо вшейте изменения прямо в код (объект CATALOG в начале скрипта).</p>
+    <p class="hint">Правки сохраняются в этом браузере автоматически. JSON нужен, только если хотите перенести цены на другое устройство или сделать резервную копию — скачайте здесь, загрузите там же. «Сбросить» вернёт стартовые цены и удалит сохранённые.</p>
   </div>
 </section>
 
@@ -503,6 +504,7 @@ document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>showTab(b.
 function refreshPicks(){
   $('lic-pick').innerHTML = CATALOG.licenses.map((x,i)=>`<option value="${i}">${esc(x.name)} — ${fmt(x.price)} / ${esc(x.unit||'мес')}</option>`).join('');
   $('work-pick').innerHTML = CATALOG.works.map((x,i)=>`<option value="${i}">${esc(x.name)} — ${fmt(x.price)}</option>`).join('');
+  if(typeof saveCatalog==='function') saveCatalog();
 }
 
 /* ════════ Лицензии ════════ */
@@ -618,8 +620,8 @@ function renderPrice(){
     <td><textarea oninput="CATALOG.licenses[${i}].desc=this.value">${esc(x.desc)}</textarea></td>
     <td class="num"><input type="number" value="${x.price}" oninput="CATALOG.licenses[${i}].price=+this.value;refreshPicks()"></td>
     <td><input value="${esc(x.unit||'мес')}" oninput="CATALOG.licenses[${i}].unit=this.value;refreshPicks()"></td>
-    <td class="num"><input type="number" value="${x.months||1}" min="1" title="Срок по умолчанию" oninput="CATALOG.licenses[${i}].months=+this.value"></td>
-    <td class="num"><input type="number" value="${x.discount||0}" min="0" max="100" title="Скидка по умолчанию, %" oninput="CATALOG.licenses[${i}].discount=+this.value"></td>
+    <td class="num"><input type="number" value="${x.months||1}" min="1" title="Срок по умолчанию" oninput="CATALOG.licenses[${i}].months=+this.value;saveCatalog()"></td>
+    <td class="num"><input type="number" value="${x.discount||0}" min="0" max="100" title="Скидка по умолчанию, %" oninput="CATALOG.licenses[${i}].discount=+this.value;saveCatalog()"></td>
     <td><button class="rowdel" onclick="CATALOG.licenses.splice(${i},1);renderPrice();refreshPicks()">✕</button></td>
   </tr>`).join('');
   $('price-work-body').innerHTML = CATALOG.works.map((x,i)=>`<tr>
@@ -631,6 +633,30 @@ function renderPrice(){
 }
 function addPriceLic(){ CATALOG.licenses.push({name:'',desc:'',price:0,unit:'мес',months:1,discount:0}); renderPrice(); refreshPicks(); }
 function addPriceWork(){ CATALOG.works.push({name:'',desc:'',price:0}); renderPrice(); refreshPicks(); }
+
+/* ════════ Автосохранение прайса в браузере ════════ */
+const LS_KEY = 'automate_kz_catalog_v2';
+function saveCatalog(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(CATALOG)); }catch(e){}
+}
+function loadCatalog(){
+  try{
+    const s = localStorage.getItem(LS_KEY);
+    if(!s) return false;
+    const j = JSON.parse(s);
+    if(Array.isArray(j.licenses) && Array.isArray(j.works)){
+      CATALOG.licenses = j.licenses.map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0,unit:x.unit||'мес',months:+x.months||1,discount:+x.discount||0}));
+      CATALOG.works = j.works.map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0}));
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function resetCatalog(){
+  if(!confirm('Сбросить прайс к стандартным ценам? Ваши правки удалятся.')) return;
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  location.reload();
+}
 
 function exportConfig(){
   const blob = new Blob([JSON.stringify(CATALOG,null,2)],{type:'application/json'});
@@ -651,6 +677,7 @@ function importConfig(e){
 
 /* ════════ Старт: типовой набор «Б24 Стандарт год + Wazzup MAX год + Sipuni» ════════ */
 $('p-date').value = new Date().toISOString().slice(0,10);
+loadCatalog();              // подтянуть сохранённые цены, если есть
 refreshPicks(); renderPrice(); refreshTemplates();
 $('tpl-apply').addEventListener('click', applyTemplate);
 function fromCat(i, extra){ return {...CATALOG.licenses[i], ...extra}; }
