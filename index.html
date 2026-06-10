@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Калькулятор КП — automate.kz</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --ink:#101828; --muted:#5b6675; --line:#e3e7ee;
@@ -86,6 +88,8 @@
   table.kp td.r{text-align:right;font-family:var(--mono);white-space:nowrap}
   table.kp td.desc{color:#374151;white-space:pre-line}
   tr.kp-sub td{font-weight:700;background:#fafbfd}
+  tr.kp-group td{font-weight:700;background:var(--brand-soft);color:var(--brand-dark);font-size:12.5px;letter-spacing:.02em}
+  tr.kp-gsub td{font-weight:600;background:#f7f9fc;color:#475467}
   .kp-total{display:flex;justify-content:flex-end;margin-top:14px}
   .kp-total .box{background:var(--ink);color:#fff;border-radius:6px;padding:12px 22px;text-align:right}
   .kp-total .box small{display:block;font-size:11px;color:#9aa6b8;text-transform:uppercase;letter-spacing:.05em}
@@ -140,6 +144,7 @@
     #pane-kp{display:block!important}
     .kp-sheet{border:none;border-radius:0;padding:10mm 8mm;max-width:none;font-size:12px}
     .kp-sec{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tr.kp-group td,tr.kp-gsub td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     table.kp th,.kp-total .box,.kp-head{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     tr{page-break-inside:avoid}
   }
@@ -223,9 +228,9 @@
     <h2>Лицензии <span class="tag">периодическая оплата согласно тарифам</span></h2>
     <table class="items">
       <thead><tr>
-        <th style="width:22%">Наименование</th><th>Описание</th>
-        <th style="width:96px">Цена/мес, ₸</th><th style="width:64px">Кол-во</th>
-        <th style="width:64px">Срок, мес</th><th style="width:70px">Скидка, %</th><th style="width:110px;text-align:right">Сумма, ₸</th><th></th>
+        <th style="width:90px">Раздел</th><th style="width:18%">Наименование</th><th>Описание</th>
+        <th style="width:90px">Цена/мес, ₸</th><th style="width:60px">Кол-во</th>
+        <th style="width:60px">Срок, мес</th><th style="width:66px">Скидка, %</th><th style="width:104px;text-align:right">Сумма, ₸</th><th></th>
       </tr></thead>
       <tbody id="lic-body"></tbody>
     </table>
@@ -260,9 +265,10 @@
 <!-- ════════ ПРЕДПРОСМОТР КП ════════ -->
 <section id="pane-kp" class="tabpane">
   <div class="no-print" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn wa-btn" onclick="shareWhatsApp()">💬 Отправить в WhatsApp</button>
-    <button class="btn ghost" onclick="copyKPText()">📋 Скопировать текст КП</button>
-    <button class="btn" onclick="window.print()">🖨 Печать / PDF</button>
+    <button class="btn wa-btn" id="btn-pdf-wa" onclick="sharePDF()">📄 Отправить PDF в WhatsApp</button>
+    <button class="btn ghost wa-btn" style="background:#fff;color:#1da851;border:1px solid #25d366" onclick="shareWhatsApp()">💬 Отправить текстом</button>
+    <button class="btn ghost" onclick="downloadPDF()">⬇ Скачать PDF</button>
+    <button class="btn ghost" onclick="copyKPText()">📋 Скопировать текст</button>
   </div>
   <div class="kp-sheet" id="kp-sheet"></div>
 </section>
@@ -469,7 +475,8 @@ function applyTemplate(){
     return {name:c.name, desc:c.desc, price:c.price, unit:c.unit,
             qty: s.qty==='users' ? users : (s.qty||1),
             months: s.months ?? c.months ?? 1,
-            discount: s.discount ?? c.discount ?? 0};
+            discount: s.discount ?? c.discount ?? 0,
+            group: licGroup(c.name)};
   });
   state.work = tpl.work.map(wn=>{ const w=CATALOG.works.find(x=>x.name===wn); return w?{...w,qty:1}:null; }).filter(Boolean);
   $('p-platform').value = tpl.platform;
@@ -508,14 +515,24 @@ function refreshPicks(){
 }
 
 /* ════════ Лицензии ════════ */
+function licGroup(name){
+  const n = name||'';
+  if(/Битрикс/i.test(n)) return 'Битрикс24';
+  if(/amoCRM/i.test(n)) return 'amoCRM';
+  if(/Wazzup/i.test(n)) return 'Wazzup';
+  if(/Sipuni|АТС|телефон/i.test(n)) return 'Телефония';
+  if(/Документы|Тригер|Telegram|Яндекс|Доставк/i.test(n)) return 'Доп. сервисы';
+  return 'Прочее';
+}
 function addLicFromPick(){
   const c = CATALOG.licenses[+$('lic-pick').value];
-  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:c.months||1, discount:c.discount||0});
+  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:c.months||1, discount:c.discount||0, group:licGroup(c.name)});
   renderLic();
 }
-function addLic(){ state.lic.push({name:'',desc:'',price:0,qty:1,months:1,discount:0}); renderLic(); }
+function addLic(){ state.lic.push({name:'',desc:'',price:0,qty:1,months:1,discount:0,group:'Прочее'}); renderLic(); }
 function renderLic(){
   $('lic-body').innerHTML = state.lic.map((r,i)=>`<tr>
+    <td data-l="Раздел"><input value="${esc(r.group||licGroup(r.name))}" oninput="state.lic[${i}].group=this.value" style="font-weight:600"></td>
     <td data-l="Наименование"><input value="${esc(r.name)}" oninput="state.lic[${i}].name=this.value"></td>
     <td data-l="Описание"><textarea oninput="state.lic[${i}].desc=this.value">${esc(r.desc)}</textarea></td>
     <td class="num" data-l="Цена/мес, ₸"><input type="number" value="${r.price}" oninput="state.lic[${i}].price=+this.value;calc()"></td>
@@ -565,10 +582,30 @@ function renderKP(){
   const t = calc();
   const d = $('p-date').value ? new Date($('p-date').value).toLocaleDateString('ru-RU') : new Date().toLocaleDateString('ru-RU');
   const client = $('p-client').value, variant = $('p-variant').value;
-  const licRows = state.lic.map((r,i)=>`<tr>
-      <td class="c">${i+1}</td><td><b>${esc(r.name)}</b></td><td class="desc">${esc(r.desc)}</td>
-      <td class="r">${fmt(r.price)}</td><td class="c">${r.qty}</td><td class="c">${r.months}</td><td class="c">${r.discount?r.discount+'%':'—'}</td>
-      <td class="r">${fmt(r.price*r.qty*r.months*(1-(r.discount||0)/100))}</td></tr>`).join('');
+  // лицензии, сгруппированные по разделам (Битрикс24 / Wazzup / Телефония …)
+  const groupsOrder = [];
+  const groups = {};
+  state.lic.forEach(r=>{
+    const g = r.group || licGroup(r.name);
+    if(!groups[g]){ groups[g]=[]; groupsOrder.push(g); }
+    groups[g].push(r);
+  });
+  let n = 0;
+  const licRows = groupsOrder.map(g=>{
+    let gSum = 0;
+    const rows = groups[g].map(r=>{
+      n++;
+      const sum = r.price*r.qty*r.months*(1-(r.discount||0)/100);
+      gSum += sum;
+      return `<tr>
+        <td class="c">${n}</td><td><b>${esc(r.name)}</b></td><td class="desc">${esc(r.desc)}</td>
+        <td class="r">${fmt(r.price)}</td><td class="c">${r.qty}</td><td class="c">${r.months}</td><td class="c">${r.discount?r.discount+'%':'—'}</td>
+        <td class="r">${fmt(sum)}</td></tr>`;
+    }).join('');
+    return `<tr class="kp-group"><td colspan="8">${esc(g)}</td></tr>
+      ${rows}
+      <tr class="kp-gsub"><td colspan="7" style="text-align:right">Итого по разделу «${esc(g)}»</td><td class="r">${fmt(gSum)}</td></tr>`;
+  }).join('');
   const workRows = state.work.map((r,i)=>`<tr>
       <td class="c">${i+1}</td><td><b>${esc(r.name)}</b>${r.price===0?' <span style="color:#00894f;font-weight:700">БОНУС</span>':''}</td>
       <td class="desc">${esc(r.desc)}</td><td class="c">${r.qty}</td>
@@ -680,7 +717,7 @@ $('p-date').value = new Date().toISOString().slice(0,10);
 loadCatalog();              // подтянуть сохранённые цены, если есть
 refreshPicks(); renderPrice(); refreshTemplates();
 $('tpl-apply').addEventListener('click', applyTemplate);
-function fromCat(i, extra){ return {...CATALOG.licenses[i], ...extra}; }
+function fromCat(i, extra){ const c=CATALOG.licenses[i]; return {...c, group:licGroup(c.name), ...extra}; }
 state.lic.push(
   fromCat(3,  {qty:1, months:12, discount:30}),   // Битрикс24 Стандартный — год (-30%)
   fromCat(18, {qty:1, months:12, discount:20}),   // Wazzup MAX — год (-20%)
@@ -703,8 +740,15 @@ function buildKPText(){
   s += `Дата: ${d} · Срок: ${$('p-term').value}\n`;
   s += `Сотрудники: ${$('p-staff').value}\n`;
   s += `\n*ЛИЦЕНЗИИ* (периодическая оплата)\n`;
-  state.lic.forEach((r,i)=>{ const sum=r.price*r.qty*r.months*(1-(r.discount||0)/100); s += `${i+1}. ${r.name} — ${r.qty}×${r.months} мес${r.discount?` (-${r.discount}%)`:''} = ${fmt(sum)}\n`; });
-  s += `Итого лицензии: ${fmt(t.lic)}\n`;
+  const go=[], gr={};
+  state.lic.forEach(r=>{ const g=r.group||licGroup(r.name); if(!gr[g]){gr[g]=[];go.push(g);} gr[g].push(r); });
+  go.forEach(g=>{
+    s += `\n— ${g} —\n`;
+    let gs=0;
+    gr[g].forEach(r=>{ const sum=r.price*r.qty*r.months*(1-(r.discount||0)/100); gs+=sum; s += `• ${r.name} — ${r.qty}×${r.months} мес${r.discount?` (-${r.discount}%)`:''} = ${fmt(sum)}\n`; });
+    s += `  Итого ${g}: ${fmt(gs)}\n`;
+  });
+  s += `Всего лицензии: ${fmt(t.lic)}\n`;
   s += `\n*РАБОТЫ* (разовая оплата)\n`;
   state.work.forEach((r,i)=>{ s += `${i+1}. ${r.name}${r.price===0?' (БОНУС)':''} = ${fmt(r.price*r.qty)}\n`; });
   s += `Итого работы: ${fmt(t.work)}\n`;
@@ -733,7 +777,82 @@ function toast(msg){
   if(window.Telegram && Telegram.WebApp && Telegram.WebApp.showPopup){ Telegram.WebApp.showPopup({message:msg}); return; }
   const el=document.createElement('div'); el.textContent=msg;
   el.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#101828;color:#fff;padding:10px 18px;border-radius:8px;z-index:99;font-size:13px';
-  document.body.appendChild(el); setTimeout(()=>el.remove(),1800);
+  document.body.appendChild(el); setTimeout(()=>el.remove(),2200);
+}
+
+/* ════════ PDF: генерация из листа КП ════════ */
+function pdfFileName(){
+  const num = ($('p-num').value||'КП').replace(/[^\wа-яА-Я\d-]+/g,'_');
+  const cl = ($('p-client').value||'').replace(/[^\wа-яА-Я\d-]+/g,'_');
+  return ('KP_'+num+(cl?'_'+cl:'')).slice(0,60)+'.pdf';
+}
+async function buildPDFBlob(){
+  renderKP();
+  const sheet = $('kp-sheet');
+  if(!window.html2canvas || !window.jspdf){ toast('Библиотека PDF не загрузилась — проверьте интернет'); return null; }
+  const canvas = await html2canvas(sheet, {scale:2, backgroundColor:'#ffffff', useCORS:true});
+  const img = canvas.toDataURL('image/jpeg', 0.92);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','mm','a4');
+  const pw = 210, ph = 297, margin = 8;
+  const iw = pw - margin*2;
+  const ih = canvas.height * iw / canvas.width;
+  let left = ih, pos = margin;
+  if(ih <= ph - margin*2){
+    pdf.addImage(img, 'JPEG', margin, margin, iw, ih);
+  } else {
+    // многостраничный: режем изображение по высоте страницы
+    let y = 0;
+    const pagePxH = canvas.width * (ph - margin*2) / iw;
+    while(y < canvas.height){
+      const slice = document.createElement('canvas');
+      slice.width = canvas.width;
+      slice.height = Math.min(pagePxH, canvas.height - y);
+      slice.getContext('2d').drawImage(canvas, 0, y, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+      const sliceImg = slice.toDataURL('image/jpeg', 0.92);
+      const sliceH = slice.height * iw / canvas.width;
+      if(y>0) pdf.addPage();
+      pdf.addImage(sliceImg, 'JPEG', margin, margin, iw, sliceH);
+      y += slice.height;
+    }
+  }
+  return pdf.output('blob');
+}
+async function downloadPDF(){
+  const blob = await buildPDFBlob(); if(!blob) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = pdfFileName(); a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+async function sharePDF(){
+  const btn = $('btn-pdf-wa'); const old = btn?btn.textContent:'';
+  if(btn){ btn.textContent='Готовлю PDF…'; btn.disabled=true; }
+  try{
+    const blob = await buildPDFBlob();
+    if(!blob){ return; }
+    const file = new File([blob], pdfFileName(), {type:'application/pdf'});
+    const text = 'Коммерческое предложение AUTOMATE.KZ';
+    // 1) Системное «Поделиться» с файлом — PDF прикрепится в WhatsApp (телефон/Telegram)
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:pdfFileName(), text});
+      return;
+    }
+    // 2) Фолбэк: скачиваем PDF и открываем WhatsApp с текстом — файл прикрепить вручную
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = pdfFileName(); a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    const num = waDigits($('p-clientphone').value);
+    const msg = encodeURIComponent(buildKPText());
+    const url = num ? `https://wa.me/${num}?text=${msg}` : `https://wa.me/?text=${msg}`;
+    if(window.Telegram && Telegram.WebApp && Telegram.WebApp.openLink){ Telegram.WebApp.openLink(url); }
+    else { window.open(url, '_blank'); }
+    toast('PDF скачан — прикрепите его в открывшемся чате WhatsApp');
+  }catch(e){
+    if(e && e.name==='AbortError') { /* пользователь закрыл окно «Поделиться» */ }
+    else toast('Не удалось сформировать PDF');
+  }finally{
+    if(btn){ btn.textContent=old; btn.disabled=false; }
+  }
 }
 
 /* ════════ Telegram Mini App ════════ */
@@ -743,12 +862,12 @@ function toast(msg){
   tg.ready(); tg.expand();
   const mb = tg.MainButton;
   function syncMain(){
-    if($('pane-kp').classList.contains('active')){ mb.setText('Отправить в WhatsApp'); }
+    if($('pane-kp').classList.contains('active')){ mb.setText('Отправить PDF в WhatsApp'); }
     else { mb.setText('Сформировать КП'); }
     mb.show();
   }
   mb.onClick(()=>{
-    if($('pane-kp').classList.contains('active')) shareWhatsApp();
+    if($('pane-kp').classList.contains('active')) sharePDF();
     else showTab('kp');
     setTimeout(syncMain,50);
   });
