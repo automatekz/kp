@@ -206,9 +206,9 @@
     <h2>Лицензии <span class="tag">периодическая оплата согласно тарифам</span></h2>
     <table class="items">
       <thead><tr>
-        <th style="width:24%">Наименование</th><th>Описание</th>
-        <th style="width:100px">Цена, ₸</th><th style="width:70px">Кол-во</th>
-        <th style="width:70px">Срок, мес</th><th style="width:110px;text-align:right">Сумма, ₸</th><th></th>
+        <th style="width:22%">Наименование</th><th>Описание</th>
+        <th style="width:96px">Цена/мес, ₸</th><th style="width:64px">Кол-во</th>
+        <th style="width:64px">Срок, мес</th><th style="width:70px">Скидка, %</th><th style="width:110px;text-align:right">Сумма, ₸</th><th></th>
       </tr></thead>
       <tbody id="lic-body"></tbody>
     </table>
@@ -271,7 +271,7 @@
   <div class="card">
     <h2>Прайс: лицензии и сервисы</h2>
     <table class="items">
-      <thead><tr><th style="width:26%">Наименование</th><th>Описание по умолчанию</th><th style="width:110px">Цена, ₸</th><th style="width:120px">Ед.</th><th></th></tr></thead>
+      <thead><tr><th style="width:24%">Наименование</th><th>Описание по умолчанию</th><th style="width:100px">Цена/мес, ₸</th><th style="width:96px">Ед.</th><th style="width:70px">Срок, мес</th><th style="width:70px">Скидка, %</th><th></th></tr></thead>
       <tbody id="price-lic-body"></tbody>
     </table>
     <div class="pill-add"><button class="btn ghost" onclick="addPriceLic()">+ Добавить позицию</button></div>
@@ -315,22 +315,32 @@
 /* ════════ КАТАЛОГ (стартовые цены — из ваших КП, правится во вкладке «Прайс») ════════ */
 const CATALOG = {
   licenses: [
-    {name:'Битрикс24, тариф Базовый', desc:'до 5 пользователей, 24 Гб на диске, облако', price:12480, unit:'портал/мес'},
-    {name:'Битрикс24, тариф Стандарт', desc:'до 50 человек, до 100 Гб на диске', price:44080, unit:'портал/мес'},
-    {name:'Битрикс24, тариф Стандарт — 1 год', desc:'лицензия на 1 год (со скидкой партнёра)', price:370272, unit:'портал/год'},
-    {name:'Битрикс24, тариф Профессиональный', desc:'до 100 пользователей, 1024 Гб на диске', price:88160, unit:'портал/мес'},
-    {name:'amoCRM, тариф Базовый', desc:'базовые возможности CRM', price:6500, unit:'польз/мес'},
-    {name:'amoCRM, тариф Расширенный', desc:'+ digital-воронка, обяз. поля, KPI', price:9500, unit:'польз/мес'},
-    {name:'amoCRM, тариф Профессиональный', desc:'+ скоринг, периодические покупки', price:13500, unit:'польз/мес'},
-    {name:'Сервис Wazzup, тариф Pro', desc:'подключение WhatsApp, до 500 диалогов в месяц, 1 номер, интеграция с CRM', price:24000, unit:'номер/мес'},
-    {name:'Сервис Wazzup, тариф Max', desc:'без ограничений по количеству диалогов с клиентом, 1 номер WhatsApp', price:36000, unit:'номер/мес'},
-    {name:'Облачная АТС Sipuni, тариф Базовый', desc:'SIP-телефония с интеграцией в CRM', price:3600, unit:'польз/мес'},
-    {name:'Облачная АТС Sipuni, тариф Расширенный', desc:'SIP-телефония, расширенные сценарии', price:6700, unit:'польз/мес'},
-    {name:'Сервис Документы', desc:'генерация документов (договор, КП) из карточки сделки', price:12000, unit:'мес'},
-    {name:'Тригеры — конструктор автодействий', desc:'конструктор автоматических действий в amoCRM', price:22750, unit:'мес'},
-    {name:'Виджет Тригеры (на пользователя)', desc:'выгрузка информации из карточки сделки в Google Таблицу', price:4700, unit:'польз/мес'},
-    {name:'Интеграция с Telegram', desc:'отправка сообщений о движениях сделок в личку или группу Telegram', price:5000, unit:'мес'},
-    {name:'Интеграция с Яндекс Доставкой', desc:'автоматическая отправка заказа в Яндекс Доставку', price:13200, unit:'мес'},
+    {name:'Битрикс24, Базовый', desc:'до 5 пользователей, 24 ГБ (цена за компанию/мес)', price:13000, unit:'компания/мес', months:1, discount:0},
+    {name:'Битрикс24, Базовый — год (-30%)', desc:'до 5 польз., оплата за год, акция до 30.06.2026', price:13000, unit:'компания/мес', months:12, discount:30},
+    {name:'Битрикс24, Стандартный', desc:'до 50 пользователей, 100 ГБ (цена за компанию/мес)', price:38000, unit:'компания/мес', months:1, discount:0},
+    {name:'Битрикс24, Стандартный — год (-30%)', desc:'до 50 польз., оплата за год, акция до 30.06.2026', price:38000, unit:'компания/мес', months:12, discount:30},
+    {name:'Битрикс24, Профессиональный', desc:'до 100 пользователей, 1024 ГБ (цена за компанию/мес)', price:76000, unit:'компания/мес', months:1, discount:0},
+    {name:'Битрикс24, Профессиональный — год (-30%)', desc:'до 100 польз., оплата за год, акция до 30.06.2026', price:76000, unit:'компания/мес', months:12, discount:30},
+    {name:'Битрикс24, Энтерпрайз 250', desc:'до 250 пользователей, 3 ТБ (цена за компанию/мес)', price:190000, unit:'компания/мес', months:1, discount:0},
+    {name:'amoCRM, Базовый', desc:'5 000 контактов и 500 сделок на пользователя (подписка от 6 мес)', price:5199, unit:'польз/мес', months:6, discount:0},
+    {name:'amoCRM, Расширенный', desc:'10 000 контактов, 1 000 сделок, digital-воронка (подписка от 6 мес)', price:9899, unit:'польз/мес', months:6, discount:0},
+    {name:'amoCRM, Профессиональный', desc:'20 000 контактов, 3 000 сделок, скоринг (подписка от 6 мес)', price:15099, unit:'польз/мес', months:6, discount:0},
+    {name:'Wazzup START', desc:'1 канал, 50 диалогов, можно писать первым', price:6700, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup START — 6 мес (-10%)', desc:'1 канал, 50 диалогов, оплата на полгода', price:6700, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup START — год (-20%)', desc:'1 канал, 50 диалогов, оплата на год', price:6700, unit:'канал/мес', months:12, discount:20},
+    {name:'Wazzup PRO', desc:'1 канал, 500 диалогов, групповые чаты', price:26600, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup PRO — 6 мес (-10%)', desc:'1 канал, 500 диалогов, оплата на полгода', price:26600, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup PRO — год (-20%)', desc:'1 канал, 500 диалогов, оплата на год', price:26600, unit:'канал/мес', months:12, discount:20},
+    {name:'Wazzup MAX', desc:'1 канал, безлимит диалогов, расшифровка аудио', price:39900, unit:'канал/мес', months:1, discount:0},
+    {name:'Wazzup MAX — 6 мес (-10%)', desc:'1 канал, безлимит, оплата на полгода', price:39900, unit:'канал/мес', months:6, discount:10},
+    {name:'Wazzup MAX — год (-20%)', desc:'1 канал, безлимит, оплата на год', price:39900, unit:'канал/мес', months:12, discount:20},
+    {name:'Облачная АТС Sipuni, Базовый', desc:'SIP-телефония, интеграция с CRM, запись разговоров', price:3600, unit:'польз/мес', months:6, discount:0},
+    {name:'Облачная АТС Sipuni, Расширенный', desc:'распределение по данным CRM, хранение записей 1 год', price:6700, unit:'польз/мес', months:6, discount:0},
+    {name:'Сервис Документы', desc:'генерация документов (договор, КП) из карточки сделки', price:12000, unit:'мес', months:6, discount:0},
+    {name:'Тригеры — конструктор автодействий', desc:'конструктор автоматических действий в amoCRM', price:22750, unit:'мес', months:6, discount:0},
+    {name:'Виджет Тригеры (на пользователя)', desc:'выгрузка из карточки сделки в Google Таблицу', price:4700, unit:'польз/мес', months:6, discount:0},
+    {name:'Интеграция с Telegram', desc:'сообщения о движениях сделок в Telegram', price:5000, unit:'мес', months:6, discount:0},
+    {name:'Интеграция с Яндекс Доставкой', desc:'автоотправка заказа в Яндекс Доставку', price:13200, unit:'мес', months:6, discount:0},
   ],
   works: [
     {name:'Внедрение Битрикс24 — Базовый пакет', price:400000, desc:
@@ -398,17 +408,18 @@ function refreshPicks(){
 /* ════════ Лицензии ════════ */
 function addLicFromPick(){
   const c = CATALOG.licenses[+$('lic-pick').value];
-  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:1});
+  state.lic.push({name:c.name, desc:c.desc, price:c.price, qty:1, months:c.months||1, discount:c.discount||0});
   renderLic();
 }
-function addLic(){ state.lic.push({name:'',desc:'',price:0,qty:1,months:1}); renderLic(); }
+function addLic(){ state.lic.push({name:'',desc:'',price:0,qty:1,months:1,discount:0}); renderLic(); }
 function renderLic(){
   $('lic-body').innerHTML = state.lic.map((r,i)=>`<tr>
     <td data-l="Наименование"><input value="${esc(r.name)}" oninput="state.lic[${i}].name=this.value"></td>
     <td data-l="Описание"><textarea oninput="state.lic[${i}].desc=this.value">${esc(r.desc)}</textarea></td>
-    <td class="num" data-l="Цена, ₸"><input type="number" value="${r.price}" oninput="state.lic[${i}].price=+this.value;calc()"></td>
+    <td class="num" data-l="Цена/мес, ₸"><input type="number" value="${r.price}" oninput="state.lic[${i}].price=+this.value;calc()"></td>
     <td class="num" data-l="Кол-во"><input type="number" value="${r.qty}" min="1" oninput="state.lic[${i}].qty=+this.value;calc()"></td>
     <td class="num" data-l="Срок, мес"><input type="number" value="${r.months}" min="1" oninput="state.lic[${i}].months=+this.value;calc()"></td>
+    <td class="num" data-l="Скидка, %"><input type="number" value="${r.discount||0}" min="0" max="100" oninput="state.lic[${i}].discount=+this.value;calc()"></td>
     <td class="sum" data-l="Сумма" id="lic-sum-${i}"></td>
     <td><button class="rowdel" title="Удалить" onclick="state.lic.splice(${i},1);renderLic()">✕</button></td>
   </tr>`).join('');
@@ -437,7 +448,7 @@ function renderWork(){
 /* ════════ Расчёт ════════ */
 function calc(){
   let lic=0, work=0;
-  state.lic.forEach((r,i)=>{ const s=(r.price||0)*(r.qty||0)*(r.months||0); lic+=s; const el=$('lic-sum-'+i); if(el) el.textContent=fmt(s); });
+  state.lic.forEach((r,i)=>{ const s=(r.price||0)*(r.qty||0)*(r.months||0)*(1-(r.discount||0)/100); lic+=s; const el=$('lic-sum-'+i); if(el) el.textContent=fmt(s); });
   state.work.forEach((r,i)=>{ const s=(r.price||0)*(r.qty||0); work+=s; const el=$('work-sum-'+i); if(el) el.textContent=fmt(s); });
   const prepay = work * (+$('p-prepay').value||0)/100;
   $('lic-sub').textContent=fmt(lic); $('work-sub').textContent=fmt(work);
@@ -454,8 +465,8 @@ function renderKP(){
   const client = $('p-client').value, variant = $('p-variant').value;
   const licRows = state.lic.map((r,i)=>`<tr>
       <td class="c">${i+1}</td><td><b>${esc(r.name)}</b></td><td class="desc">${esc(r.desc)}</td>
-      <td class="r">${fmt(r.price)}</td><td class="c">${r.qty}</td><td class="c">${r.months}</td>
-      <td class="r">${fmt(r.price*r.qty*r.months)}</td></tr>`).join('');
+      <td class="r">${fmt(r.price)}</td><td class="c">${r.qty}</td><td class="c">${r.months}</td><td class="c">${r.discount?r.discount+'%':'—'}</td>
+      <td class="r">${fmt(r.price*r.qty*r.months*(1-(r.discount||0)/100))}</td></tr>`).join('');
   const workRows = state.work.map((r,i)=>`<tr>
       <td class="c">${i+1}</td><td><b>${esc(r.name)}</b>${r.price===0?' <span style="color:#00894f;font-weight:700">БОНУС</span>':''}</td>
       <td class="desc">${esc(r.desc)}</td><td class="c">${r.qty}</td>
@@ -479,9 +490,9 @@ function renderKP(){
 
     <div class="kp-sec">Стоимость лицензий — периодическая оплата согласно тарифам</div>
     <table class="kp">
-      <tr><th style="width:28px">№</th><th style="width:18%">Наименование</th><th>Описание</th><th style="width:80px">Цена</th><th style="width:48px">Кол-во</th><th style="width:54px">Срок, мес</th><th style="width:96px">Сумма</th></tr>
-      ${licRows || '<tr><td colspan="7" style="text-align:center;color:#98a2b3">позиции не добавлены</td></tr>'}
-      <tr class="kp-sub"><td colspan="6" style="text-align:right">Стоимость лицензий</td><td class="r">${fmt(t.lic)}</td></tr>
+      <tr><th style="width:28px">№</th><th style="width:18%">Наименование</th><th>Описание</th><th style="width:74px">Цена/мес</th><th style="width:42px">Кол-во</th><th style="width:48px">Срок</th><th style="width:48px">Скидка</th><th style="width:92px">Сумма</th></tr>
+      ${licRows || '<tr><td colspan="8" style="text-align:center;color:#98a2b3">позиции не добавлены</td></tr>'}
+      <tr class="kp-sub"><td colspan="7" style="text-align:right">Стоимость лицензий</td><td class="r">${fmt(t.lic)}</td></tr>
     </table>
 
     <div class="kp-sec">Стоимость работ по внедрению и настройке — разовая оплата</div>
@@ -507,6 +518,8 @@ function renderPrice(){
     <td><textarea oninput="CATALOG.licenses[${i}].desc=this.value">${esc(x.desc)}</textarea></td>
     <td class="num"><input type="number" value="${x.price}" oninput="CATALOG.licenses[${i}].price=+this.value;refreshPicks()"></td>
     <td><input value="${esc(x.unit||'мес')}" oninput="CATALOG.licenses[${i}].unit=this.value;refreshPicks()"></td>
+    <td class="num"><input type="number" value="${x.months||1}" min="1" title="Срок по умолчанию" oninput="CATALOG.licenses[${i}].months=+this.value"></td>
+    <td class="num"><input type="number" value="${x.discount||0}" min="0" max="100" title="Скидка по умолчанию, %" oninput="CATALOG.licenses[${i}].discount=+this.value"></td>
     <td><button class="rowdel" onclick="CATALOG.licenses.splice(${i},1);renderPrice();refreshPicks()">✕</button></td>
   </tr>`).join('');
   $('price-work-body').innerHTML = CATALOG.works.map((x,i)=>`<tr>
@@ -516,7 +529,7 @@ function renderPrice(){
     <td><button class="rowdel" onclick="CATALOG.works.splice(${i},1);renderPrice();refreshPicks()">✕</button></td>
   </tr>`).join('');
 }
-function addPriceLic(){ CATALOG.licenses.push({name:'',desc:'',price:0,unit:'мес'}); renderPrice(); refreshPicks(); }
+function addPriceLic(){ CATALOG.licenses.push({name:'',desc:'',price:0,unit:'мес',months:1,discount:0}); renderPrice(); refreshPicks(); }
 function addPriceWork(){ CATALOG.works.push({name:'',desc:'',price:0}); renderPrice(); refreshPicks(); }
 
 function exportConfig(){
@@ -527,17 +540,23 @@ function exportConfig(){
 function importConfig(e){
   const f = e.target.files[0]; if(!f) return;
   const r = new FileReader();
-  r.onload = () => { try{ const j=JSON.parse(r.result); CATALOG.licenses=j.licenses||[]; CATALOG.works=j.works||[]; renderPrice(); refreshPicks(); }catch(err){ alert('Не удалось прочитать JSON'); } };
+  r.onload = () => { try{
+    const j=JSON.parse(r.result);
+    CATALOG.licenses=(j.licenses||[]).map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0,unit:x.unit||'мес',months:+x.months||1,discount:+x.discount||0}));
+    CATALOG.works=(j.works||[]).map(x=>({name:x.name||'',desc:x.desc||'',price:+x.price||0}));
+    renderPrice(); refreshPicks(); toast('Прайс загружен: '+CATALOG.licenses.length+' лиц., '+CATALOG.works.length+' работ');
+  }catch(err){ alert('Не удалось прочитать JSON'); } };
   r.readAsText(f);
 }
 
-/* ════════ Старт: типовой набор «Битрикс24 Стандарт + Wazzup + Sipuni» ════════ */
+/* ════════ Старт: типовой набор «Б24 Стандарт год + Wazzup MAX год + Sipuni» ════════ */
 $('p-date').value = new Date().toISOString().slice(0,10);
 refreshPicks(); renderPrice();
+function fromCat(i, extra){ return {...CATALOG.licenses[i], ...extra}; }
 state.lic.push(
-  {...CATALOG.licenses[1], qty:1, months:1},
-  {...CATALOG.licenses[8], qty:1, months:1},
-  {...CATALOG.licenses[9], qty:4, months:6},
+  fromCat(3,  {qty:1, months:12, discount:30}),   // Битрикс24 Стандартный — год (-30%)
+  fromCat(18, {qty:1, months:12, discount:20}),   // Wazzup MAX — год (-20%)
+  fromCat(19, {qty:4, months:6,  discount:0}),    // Sipuni Базовый, 4 польз × 6 мес
 );
 state.work.push(
   {...CATALOG.works[0], qty:1},
@@ -556,7 +575,7 @@ function buildKPText(){
   s += `Дата: ${d} · Срок: ${$('p-term').value}\n`;
   s += `Сотрудники: ${$('p-staff').value}\n`;
   s += `\n*ЛИЦЕНЗИИ* (периодическая оплата)\n`;
-  state.lic.forEach((r,i)=>{ s += `${i+1}. ${r.name} — ${r.qty}×${r.months} мес = ${fmt(r.price*r.qty*r.months)}\n`; });
+  state.lic.forEach((r,i)=>{ const sum=r.price*r.qty*r.months*(1-(r.discount||0)/100); s += `${i+1}. ${r.name} — ${r.qty}×${r.months} мес${r.discount?` (-${r.discount}%)`:''} = ${fmt(sum)}\n`; });
   s += `Итого лицензии: ${fmt(t.lic)}\n`;
   s += `\n*РАБОТЫ* (разовая оплата)\n`;
   state.work.forEach((r,i)=>{ s += `${i+1}. ${r.name}${r.price===0?' (БОНУС)':''} = ${fmt(r.price*r.qty)}\n`; });
