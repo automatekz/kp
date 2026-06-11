@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Финансы — automate.kz</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --ink:#101828; --muted:#5b6675; --line:#e3e7ee; --bg:#f3f5f9; --card:#fff;
+    --brand:#0a47e6; --brand-soft:#eaf0ff; --green:#00a05a; --red:#c0271f;
+    --mono:'Consolas','SF Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  header{background:var(--ink);color:#fff;padding:14px 18px}
+  .logo{font-weight:800;font-size:17px}.logo span{color:#6f9bff}
+  .sub{color:#9aa6b8;font-size:12px}
+  main{max-width:520px;margin:0 auto;padding:16px 12px 40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+
+  .kind{display:flex;gap:8px;margin-bottom:14px}
+  .kind button{flex:1;padding:12px;border-radius:10px;border:2px solid var(--line);background:#fff;font-size:15px;font-weight:700;cursor:pointer}
+  .kind button.inc.active{border-color:var(--green);background:#eafaf2;color:#0f5132}
+  .kind button.exp.active{border-color:var(--red);background:#fdecea;color:#7a1d18}
+
+  label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:12px}
+  input,select,textarea{font:inherit;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;background:#fff;width:100%}
+  input:focus,select:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+  #amount{font-family:var(--mono);font-size:22px;font-weight:700;text-align:center}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  .btn{width:100%;padding:14px;border:none;border-radius:12px;background:var(--brand);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+  .btn:disabled{opacity:.6}
+
+  .result{display:none;border-radius:12px;padding:14px;margin-top:12px;font-size:14px;line-height:1.5}
+  .result.ok{display:block;background:#eafaf2;border:1px solid #b9ebd3;color:#0f5132}
+  .result.err{display:block;background:#fdecea;border:1px solid #f3c2bd;color:#7a1d18}
+  .result b{font-family:var(--mono)}
+
+  .sumline{display:flex;justify-content:space-between;padding:4px 0}
+  .sumline b.profit{color:var(--green);font-size:16px}
+
+  /* вкладки */
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1;padding:11px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-weight:700;font-size:14px;cursor:pointer}
+  .tabs button.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  .pane{display:none}.pane.active{display:block}
+
+  /* отчёт */
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .chips button{padding:8px 12px;border-radius:99px;border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;cursor:pointer}
+  .chips button.active{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+  .custom-range{display:none;gap:8px;margin-bottom:12px}
+  .custom-range.show{display:grid;grid-template-columns:1fr 1fr auto}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+  .kpi small{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .kpi b{font-family:var(--mono);font-size:15px}
+  .kpi.profit b{color:var(--green)}
+  .cat{margin-bottom:8px}
+  .cat .head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px}
+  .cat .head b{font-family:var(--mono)}
+  .bar{height:8px;border-radius:99px;background:var(--bg);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;background:var(--brand)}
+  .cat.exp .bar i{background:var(--red)}
+  h3.sec{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px}
+  .proj-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .proj-row b{font-family:var(--mono);color:var(--green)}
+  .proj-row b.neg{color:var(--red)}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">AUTOMATE<span>.KZ</span></div>
+  <div class="sub">Учёт финансов · быстрый ввод</div>
+</header>
+<main>
+  <div class="tabs">
+    <button id="tab-input" class="active" onclick="showPane('input')">✏️ Ввод</button>
+    <button id="tab-report" onclick="showPane('report')">📊 Отчёт</button>
+  </div>
+
+  <div class="pane active" id="pane-input">
+  <div class="card">
+    <div class="kind">
+      <button type="button" id="k-inc" class="inc active" onclick="setKind('income')">💰 Поступление</button>
+      <button type="button" id="k-exp" class="exp" onclick="setKind('expense')">📉 Затрата</button>
+    </div>
+
+    <label class="f">Сумма, ₸
+      <input id="amount" type="number" inputmode="numeric" placeholder="0">
+    </label>
+
+    <label class="f">Проект / клиент
+      <select id="project"></select>
+    </label>
+    <label class="f" id="newproj-wrap" style="display:none">Название нового проекта
+      <input id="newproj" placeholder="Например: SHATE">
+    </label>
+
+    <div class="row2">
+      <label class="f"><span id="type-label">Тип продажи</span>
+        <select id="type"></select>
+      </label>
+      <label class="f" id="method-wrap">Способ
+        <select id="method">
+          <option>Kaspi</option><option>Счёт</option><option>Наличные</option><option>Другое</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="f">Комментарий (необязательно)
+      <input id="comment" placeholder="">
+    </label>
+
+    <button class="btn" id="submit" onclick="send()">Записать</button>
+    <div class="result" id="result"></div>
+  </div>
+  </div><!-- /pane-input -->
+
+  <div class="pane" id="pane-report">
+    <div class="card">
+      <div class="chips" id="period-chips">
+        <button data-p="this-month">Этот месяц</button>
+        <button data-p="last-month">Прошлый месяц</button>
+        <button data-p="quarter">Квартал</button>
+        <button data-p="year">Год</button>
+        <button data-p="custom">Свой период</button>
+      </div>
+      <div class="custom-range" id="custom-range">
+        <input type="date" id="from-date">
+        <input type="date" id="to-date">
+        <button class="btn" style="width:auto;padding:10px 14px" onclick="loadReport()">ОК</button>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><small>Выручка</small><b id="r-income">—</b></div>
+        <div class="kpi"><small>Затраты</small><b id="r-expense">—</b></div>
+        <div class="kpi profit"><small>Прибыль</small><b id="r-profit">—</b></div>
+      </div>
+
+      <h3 class="sec">Доходы по категориям</h3>
+      <div id="r-income-cats"><div class="empty">загрузка…</div></div>
+
+      <h3 class="sec">Затраты по категориям</h3>
+      <div id="r-expense-cats"><div class="empty">—</div></div>
+
+      <h3 class="sec">Прибыль по проектам за период</h3>
+      <div id="r-projects"><div class="empty">—</div></div>
+    </div>
+  </div><!-- /pane-report -->
+</main>
+
+<script>
+/* ⬇️ ВСТАВЬТЕ СЮДА URL вашего Apps Script веб-приложения (шаг 3 установки) */
+var API_URL = 'ВСТАВЬТЕ_URL_APPS_SCRIPT';
+
+var INCOME_TYPES=['Внедрение','Лицензии','Техподдержка','Виджеты','Вендинг','Прочее'];
+var EXPENSE_TYPES=['Подрядчик','Лицензии (себестоимость)','Реклама','Сервисы','Прочее'];
+var kind='income';
+var $=function(id){return document.getElementById(id)};
+
+function setKind(k){
+  kind=k;
+  $('k-inc').classList.toggle('active',k==='income');
+  $('k-exp').classList.toggle('active',k==='expense');
+  $('type-label').textContent = k==='income'?'Тип продажи':'Категория';
+  $('method-wrap').style.display = k==='income'?'':'none';
+  fillTypes();
+}
+function fillTypes(){
+  var list = kind==='income'?INCOME_TYPES:EXPENSE_TYPES;
+  $('type').innerHTML = list.map(function(t){return '<option>'+t+'</option>'}).join('');
+}
+function fillProjects(list){
+  var opts = list.map(function(p){return '<option>'+p+'</option>'}).join('');
+  $('project').innerHTML = opts + '<option value="__new__">➕ Новый проект…</option>';
+}
+$('project') && document.addEventListener('change', function(e){
+  if(e.target.id==='project'){
+    $('newproj-wrap').style.display = e.target.value==='__new__' ? '' : 'none';
+  }
+});
+
+function loadProjects(){
+  try{
+    fetch(API_URL+'?action=projects').then(function(r){return r.json()}).then(function(j){
+      if(j.ok){
+        if(j.incomeTypes) INCOME_TYPES=j.incomeTypes;
+        if(j.expenseTypes) EXPENSE_TYPES=j.expenseTypes;
+        fillProjects(j.projects||[]);
+        fillTypes();
+      }
+    }).catch(function(){ fillProjects([]); fillTypes(); });
+  }catch(e){ fillProjects([]); fillTypes(); }
+}
+
+function send(){
+  var amount = parseFloat($('amount').value);
+  var project = $('project').value==='__new__' ? $('newproj').value.trim() : $('project').value;
+  var res = $('result');
+  if(!amount || amount<=0){ res.className='result err'; res.textContent='Введите сумму'; return; }
+  if(!project){ res.className='result err'; res.textContent='Укажите проект'; return; }
+
+  var btn=$('submit'); btn.disabled=true; btn.textContent='Записываю…';
+  fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},   // simple request — без CORS preflight
+    body: JSON.stringify({kind:kind, amount:amount, project:project, type:$('type').value,
+                          method:$('method').value, comment:$('comment').value})
+  }).then(function(r){return r.json()}).then(function(j){
+    if(j.ok){
+      res.className='result ok';
+      res.innerHTML = '✅ Записано: <b>'+fmt(j.amount)+'</b> · '+esc(j.project)+
+        '<div style="margin-top:8px;border-top:1px solid #b9ebd3;padding-top:8px">'+
+        '<div class="sumline"><span>Выручка по проекту</span><b>'+fmt(j.projectIncome)+'</b></div>'+
+        '<div class="sumline"><span>Затраты по проекту</span><b>'+fmt(j.projectExpense)+'</b></div>'+
+        '<div class="sumline"><span>Чистая прибыль</span><b class="profit">'+fmt(j.projectProfit)+'</b></div></div>';
+      $('amount').value=''; $('comment').value='';
+      if($('project').value==='__new__'){ loadProjects(); }
+      if(window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback){ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }
+    } else {
+      res.className='result err'; res.textContent='⚠️ '+(j.error||'Ошибка записи');
+    }
+  }).catch(function(e){
+    res.className='result err'; res.textContent='⚠️ Нет связи с таблицей. Проверьте API_URL и доступ «все».';
+  }).finally(function(){ btn.disabled=false; btn.textContent='Записать'; });
+}
+
+function fmt(n){ return (Math.round(n)||0).toLocaleString('ru-RU')+' ₸'; }
+function esc(s){ return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
+
+/* Telegram Mini App */
+(function(){
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if(tg){ tg.ready(); tg.expand(); }
+})();
+fillTypes();
+loadProjects();
+
+/* ════════ ВКЛАДКИ ════════ */
+function showPane(p){
+  document.getElementById('pane-input').classList.toggle('active', p==='input');
+  document.getElementById('pane-report').classList.toggle('active', p==='report');
+  document.getElementById('tab-input').classList.toggle('active', p==='input');
+  document.getElementById('tab-report').classList.toggle('active', p==='report');
+  if(p==='report') loadReport();
+}
+
+/* ════════ ПЕРИОДЫ (выбор сохраняется) ════════ */
+var PERIOD_KEY='automate_fin_period_v1';
+var period = (function(){ try{ return JSON.parse(localStorage.getItem(PERIOD_KEY)) || {p:'this-month'}; }catch(e){ return {p:'this-month'}; } })();
+
+function periodDates(){
+  var now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  function iso(d){ return d.toISOString().slice(0,10); }
+  if(period.p==='this-month') return {from:iso(new Date(y,m,1)), to:iso(now)};
+  if(period.p==='last-month') return {from:iso(new Date(y,m-1,1)), to:iso(new Date(y,m,0))};
+  if(period.p==='quarter'){ var qm=Math.floor(m/3)*3; return {from:iso(new Date(y,qm,1)), to:iso(now)}; }
+  if(period.p==='year') return {from:iso(new Date(y,0,1)), to:iso(now)};
+  return {from:period.from||iso(new Date(y,m,1)), to:period.to||iso(now)}; // custom
+}
+function setPeriod(p){
+  period.p=p;
+  if(p==='custom'){
+    document.getElementById('custom-range').classList.add('show');
+    var d=periodDates();
+    document.getElementById('from-date').value=period.from||d.from;
+    document.getElementById('to-date').value=period.to||d.to;
+  } else {
+    document.getElementById('custom-range').classList.remove('show');
+    savePeriod(); loadReport();
+  }
+  highlightChips();
+}
+function savePeriod(){
+  if(period.p==='custom'){
+    period.from=document.getElementById('from-date').value;
+    period.to=document.getElementById('to-date').value;
+  }
+  try{ localStorage.setItem(PERIOD_KEY, JSON.stringify(period)); }catch(e){}
+}
+function highlightChips(){
+  document.querySelectorAll('#period-chips button').forEach(function(b){
+    b.classList.toggle('active', b.dataset.p===period.p);
+  });
+}
+document.querySelectorAll('#period-chips button').forEach(function(b){
+  b.addEventListener('click', function(){ setPeriod(b.dataset.p); });
+});
+
+/* ════════ ОТЧЁТ ════════ */
+function loadReport(){
+  savePeriod();
+  var d = periodDates();
+  document.getElementById('r-income-cats').innerHTML='<div class="empty">загрузка…</div>';
+  try{
+    fetch(API_URL+'?action=report&from='+d.from+'&to='+d.to)
+      .then(function(r){return r.json()})
+      .then(function(j){
+        if(!j.ok){ throw new Error(j.error||''); }
+        renderReport(j.report);
+      })
+      .catch(function(){
+        document.getElementById('r-income-cats').innerHTML='<div class="empty">⚠️ Не удалось загрузить. Проверьте связь.</div>';
+      });
+  }catch(e){
+    document.getElementById('r-income-cats').innerHTML='<div class="empty">⚠️ Не удалось загрузить. Проверьте связь.</div>';
+  }
+}
+function renderReport(r){
+  document.getElementById('r-income').textContent = fmt(r.incomeTotal);
+  document.getElementById('r-expense').textContent = fmt(r.expenseTotal);
+  document.getElementById('r-profit').textContent = fmt(r.profit);
+
+  function cats(list, total, cls){
+    if(!list || !list.length) return '<div class="empty">нет записей за период</div>';
+    return list.map(function(c){
+      var pct = total>0 ? Math.round(c.sum/total*100) : 0;
+      return '<div class="cat '+cls+'"><div class="head"><span>'+esc(c.name)+' · '+pct+'%</span><b>'+fmt(c.sum)+'</b></div>'+
+             '<div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+    }).join('');
+  }
+  document.getElementById('r-income-cats').innerHTML = cats(r.incomeByType, r.incomeTotal, '');
+  document.getElementById('r-expense-cats').innerHTML = cats(r.expenseByType, r.expenseTotal, 'exp');
+
+  var pr = (r.byProject||[]).slice(0,10).map(function(p){
+    return '<div class="proj-row"><span>'+esc(p.project)+'</span><b class="'+(p.profit<0?'neg':'')+'">'+fmt(p.profit)+'</b></div>';
+  }).join('');
+  document.getElementById('r-projects').innerHTML = pr || '<div class="empty">нет записей за период</div>';
+}
+
+highlightChips();
+if(period.p==='custom'){ document.getElementById('custom-range').classList.add('show');
+  document.getElementById('from-date').value=period.from||''; document.getElementById('to-date').value=period.to||''; }
+</script>
+</body>
+</html>
