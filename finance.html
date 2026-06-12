@@ -99,6 +99,9 @@
     <label class="f" id="newproj-wrap" style="display:none">Название нового проекта
       <input id="newproj" placeholder="Например: SHATE">
     </label>
+    <label class="f" id="newtotal-wrap" style="display:none">Сумма договора, ₸ (для расчёта долга)
+      <input id="newtotal" type="number" inputmode="numeric" placeholder="например 900000">
+    </label>
 
     <div class="row2">
       <label class="f"><span id="type-label">Тип продажи</span>
@@ -159,7 +162,7 @@
 
 <script>
 /* ⬇️ ВСТАВЬТЕ СЮДА URL вашего Apps Script веб-приложения (шаг 3 установки) */
-var API_URL = 'https://script.google.com/macros/s/AKfycbzBNSj_bnum-54NYlk-wbeSWWF8oKFwHa02K3CbSxCPhxIFAe7BBqzGTOMOO3NytWRDeg/exec';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwI4xnbajba3lBAGP3wDV4KkFYkONof0_1JkNyVIun1w0JbHUOkVH2Cysp28yZYteEt1Q/exec';
 
 var INCOME_TYPES=['Внедрение','Лицензии','Техподдержка','Виджеты','Вендинг','Прочее'];
 var EXPENSE_TYPES=['Подрядчик','Лицензии (себестоимость)','Реклама','Сервисы','Прочее'];
@@ -189,7 +192,9 @@ function fillProjects(list){
   projectChanged();
 }
 function projectChanged(){
-  $('newproj-wrap').style.display = $('project').value==='__new__' ? '' : 'none';
+  var isNew = $('project').value==='__new__';
+  $('newproj-wrap').style.display = isNew ? '' : 'none';
+  $('newtotal-wrap').style.display = isNew ? '' : 'none';
 }
 
 function loadProjects(){
@@ -214,20 +219,27 @@ function send(){
   if(!project){ res.className='result err'; res.textContent='Укажите проект'; return; }
 
   var btn=$('submit'); btn.disabled=true; btn.textContent='Записываю…';
+  var projectTotal = $('project').value==='__new__' ? parseFloat($('newtotal').value)||0 : 0;
   fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},   // simple request — без CORS preflight
     body: JSON.stringify({kind:kind, amount:amount, project:project, type:$('type').value,
-                          method:$('method').value, comment:$('comment').value, deal:$('deal').value})
+                          method:$('method').value, comment:$('comment').value, deal:$('deal').value,
+                          projectTotal:projectTotal})
   }).then(function(r){return r.json()}).then(function(j){
     if(j.ok){
       res.className='result ok';
+      var debtBlock = j.projectTotal>0
+        ? '<div class="sumline"><span>Сумма договора</span><b>'+fmt(j.projectTotal)+'</b></div>'+
+          '<div class="sumline"><span>Оплачено</span><b>'+fmt(j.projectIncome)+'</b></div>'+
+          '<div class="sumline"><span>Остаток (долг)</span><b style="color:'+(j.projectDebt>0?'#c0271f':'#00a05a')+'">'+fmt(j.projectDebt)+'</b></div>'
+        : '<div class="sumline"><span>Оплачено по проекту</span><b>'+fmt(j.projectIncome)+'</b></div>';
       res.innerHTML = '✅ Записано: <b>'+fmt(j.amount)+'</b> · '+esc(j.project)+
         '<div style="margin-top:8px;border-top:1px solid #b9ebd3;padding-top:8px">'+
-        '<div class="sumline"><span>Выручка по проекту</span><b>'+fmt(j.projectIncome)+'</b></div>'+
+        debtBlock +
         '<div class="sumline"><span>Затраты по проекту</span><b>'+fmt(j.projectExpense)+'</b></div>'+
         '<div class="sumline"><span>Чистая прибыль</span><b class="profit">'+fmt(j.projectProfit)+'</b></div></div>';
-      $('amount').value=''; $('comment').value=''; $('deal').value='';
+      $('amount').value=''; $('comment').value=''; $('deal').value=''; $('newtotal').value='';
       if($('project').value==='__new__'){ loadProjects(); }
       if(window.Telegram && Telegram.WebApp && Telegram.WebApp.HapticFeedback){ Telegram.WebApp.HapticFeedback.notificationOccurred('success'); }
     } else {
@@ -337,7 +349,8 @@ function renderReport(r){
   document.getElementById('r-expense-cats').innerHTML = cats(r.expenseByType, r.expenseTotal, 'exp');
 
   var pr = (r.byProject||[]).slice(0,10).map(function(p){
-    return '<div class="proj-row"><span>'+esc(p.project)+'</span><b class="'+(p.profit<0?'neg':'')+'">'+fmt(p.profit)+'</b></div>';
+    var debt = (p.debt && p.debt>0) ? '<div style="font-size:11px;color:#c0271f">долг '+fmt(p.debt)+'</div>' : '';
+    return '<div class="proj-row"><span>'+esc(p.project)+debt+'</span><b class="'+(p.profit<0?'neg':'')+'">'+fmt(p.profit)+'</b></div>';
   }).join('');
   document.getElementById('r-projects').innerHTML = pr || '<div class="empty">нет записей за период</div>';
 }
