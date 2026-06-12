@@ -163,6 +163,7 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbz7NUuZ5tt5NxQErPBl2FEjJK
 
 var INCOME_TYPES=['Внедрение','Лицензии','Техподдержка','Виджеты','Вендинг','Прочее'];
 var EXPENSE_TYPES=['Подрядчик','Лицензии (себестоимость)','Реклама','Сервисы','Прочее'];
+var METHODS=['Kaspi','Счёт','Наличные','Другое'];
 var kind='income';
 var $=function(id){return document.getElementById(id)};
 
@@ -177,6 +178,9 @@ function setKind(k){
 function fillTypes(){
   var list = kind==='income'?INCOME_TYPES:EXPENSE_TYPES;
   $('type').innerHTML = list.map(function(t){return '<option>'+t+'</option>'}).join('');
+}
+function fillMethods(){
+  $('method').innerHTML = METHODS.map(function(t){return '<option>'+t+'</option>'}).join('');
 }
 function fillProjects(list){
   var opts = list.map(function(p){return '<option>'+esc(p)+'</option>'}).join('');
@@ -194,8 +198,9 @@ function loadProjects(){
       if(j.ok){
         if(j.incomeTypes) INCOME_TYPES=j.incomeTypes;
         if(j.expenseTypes) EXPENSE_TYPES=j.expenseTypes;
+        if(j.methods) METHODS=j.methods;
         fillProjects(j.projects||[]);
-        fillTypes();
+        fillTypes(); fillMethods();
       }
     }).catch(function(){ fillProjects([]); fillTypes(); });
   }catch(e){ fillProjects([]); fillTypes(); }
@@ -242,6 +247,7 @@ function esc(s){ return String(s||'').replace(/[&<>"]/g,function(c){return {'&':
   if(tg){ tg.ready(); tg.expand(); }
 })();
 fillTypes();
+fillMethods();
 loadProjects();
 
 /* ════════ ВКЛАДКИ ════════ */
